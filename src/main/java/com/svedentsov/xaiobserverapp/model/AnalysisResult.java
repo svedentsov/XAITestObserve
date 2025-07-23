@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -17,53 +18,80 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "analysis_result")
 public class AnalysisResult {
     /**
      * Уникальный идентификатор результата анализа.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     /**
-     * Тип проведенного анализа (например, "Анализ шага сбоя", "Анализ по типу исключения").
+     * Связь Many-to-One с сущностью TestRun.
+     * Колонка "test_run_id" в таблице analysis_result — внешний ключ.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_run_id", nullable = false)
+    private TestRun testRun;
+
+    /**
+     * Тип анализа (например, "AI_RCA", "MANUAL_REVIEW").
      */
     private String analysisType;
 
     /**
+     * Предполагаемая корневая причина сбоя.
+     */
+    @Column(length = 2000)
+    private String rootCause;
+
+    /**
+     * Показатель уверенности (0.0–1.0) в выявленной причине.
+     */
+    private Double confidenceScore;
+
+    /**
+     * Предполагаемое решение или действие для устранения проблемы.
+     */
+    @Column(length = 4000)
+    private String suggestedSolution;
+
+    /**
+     * Временная метка, когда был выполнен анализ.
+     */
+    private LocalDateTime analysisTimestamp;
+
+    /**
      * Предложенная причина сбоя на основе анализа.
-     * Установлена длина столбца 2000 символов для возможности развернутого описания.
      */
     @Column(length = 2000)
     private String suggestedReason;
 
     /**
      * Предложенное решение или рекомендации по устранению сбоя.
-     * Установлена длина столбца 2000 символов для возможности развернутого описания.
      */
     @Column(length = 2000)
     private String solution;
 
     /**
-     * Уровень уверенности AI в предложенной причине/решении (от 0.0 до 1.0).
+     * Уровень уверенности AI в предложенной причине/решении (0.0–1.0).
      */
     private Double aiConfidence;
 
     /**
-     * Сырые данные, использованные для анализа, или дополнительная информация,
-     * полезная для отладки или понимания анализа.
-     * Установлена длина столбца 4000 символов для возможности хранения большого объема данных.
+     * Сырые данные для анализа или дополнительная информация.
      */
     @Column(length = 4000)
     private String rawData;
 
     /**
-     * Список записей обратной связи, связанных с данным результатом анализа.
-     * {@code mappedBy = "analysisResult"} указывает, что связь управляется полем {@code analysisResult}
-     * в сущности {@link AnalysisFeedback}.
-     * {@code CascadeType.ALL} означает, что все операции (сохранение, удаление) будут каскадно применяться.
-     * {@code orphanRemoval = true} удаляет дочерние сущности, если они отсоединяются от родителя.
-     * {@code @JsonIgnore} предотвращает рекурсивную сериализацию при преобразовании в JSON.
+     * Флаг, подтверждает ли пользователь результат анализа как корректный.
+     */
+    private Boolean userConfirmedCorrect;
+
+    /**
+     * Обратная связь от пользователей по данному результату анализа.
      */
     @OneToMany(mappedBy = "analysisResult", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @Data
 @AllArgsConstructor
-@NoArgsConstructor // Добавлено для упрощения десериализации/конструкции JSON
+@NoArgsConstructor
 public class StatisticsDTO {
     /**
      * Общее количество выполненных тестовых запусков.

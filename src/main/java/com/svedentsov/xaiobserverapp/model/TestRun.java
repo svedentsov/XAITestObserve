@@ -1,5 +1,7 @@
 package com.svedentsov.xaiobserverapp.model;
 
+import com.svedentsov.xaiobserverapp.dto.EnvironmentDetailsDTO;
+import com.svedentsov.xaiobserverapp.dto.TestArtifactsDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,102 +10,123 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Сущность, представляющая отдельный тестовый запуск.
- * Содержит всю основную информацию о выполнении одного тестового метода,
- * включая его статус, время, детали исключения, шаги выполнения
- * и связанные результаты анализа.
- */
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestRun {
-    /**
-     * Перечисление возможных статусов тестового запуска.
-     */
     public enum TestStatus {
         PASSED,
         FAILED,
-        SKIPPED
+        SKIPPED,
+        BROKEN
     }
 
-    /**
-     * Уникальный идентификатор тестового запуска.
-     * Используется как первичный ключ.
-     */
     @Id
     private String id;
-
-    /**
-     * Полное имя класса, в котором выполнялся тест.
-     */
     private String testClass;
-
-    /**
-     * Имя тестового метода.
-     */
     private String testMethod;
-
-    /**
-     * Временная метка завершения теста.
-     */
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private long durationMillis;
     private LocalDateTime timestamp;
 
-    /**
-     * Статус завершения теста ({@code PASSED}, {@code FAILED}, {@code SKIPPED}).
-     * Хранится как строка в базе данных.
-     */
     @Enumerated(EnumType.STRING)
     private TestStatus status;
 
-    /**
-     * Тип исключения, вызвавшего сбой теста (если применимо).
-     * Длина столбца 2000 символов.
-     */
     @Column(length = 2000)
     private String exceptionType;
 
-    /**
-     * Полный стек-трейс исключения (если применимо).
-     * Длина столбца 4000 символов.
-     */
+    @Column(length = 2000)
+    private String exceptionMessage;
+
     @Column(length = 4000)
     private String stackTrace;
 
-    /**
-     * Встраиваемый объект, содержащий метаданные о шаге, на котором произошел сбой.
-     */
     @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "action", column = @Column(name = "failed_step_action")),
+            @AttributeOverride(name = "locatorStrategy", column = @Column(name = "failed_step_locator_strategy")),
+            @AttributeOverride(name = "locatorValue", column = @Column(name = "failed_step_locator_value", length = 512)),
+            @AttributeOverride(name = "confidenceScore", column = @Column(name = "failed_step_confidence_score")),
+            @AttributeOverride(name = "result", column = @Column(name = "failed_step_result")),
+            @AttributeOverride(name = "stepNumber", column = @Column(name = "failed_step_number")),
+            @AttributeOverride(name = "interactedText", column = @Column(name = "failed_step_interacted_text")),
+            @AttributeOverride(name = "errorMessage", column = @Column(name = "failed_step_error_message")),
+            @AttributeOverride(name = "stepStartTime", column = @Column(name = "failed_step_start_time")),
+            @AttributeOverride(name = "stepEndTime", column = @Column(name = "failed_step_end_time")),
+            @AttributeOverride(name = "stepDurationMillis", column = @Column(name = "failed_step_duration_millis")),
+            @AttributeOverride(name = "additionalStepData", column = @Column(name = "failed_step_additional_data", length = 1000))
+    })
     private AiDecisionMetadata failedStep;
 
-    /**
-     * Коллекция встраиваемых объектов, представляющих последовательность шагов выполнения теста.
-     * Хранится в отдельной таблице {@code execution_path}, связанной по {@code test_run_id}.
-     * {@code @OrderColumn} сохраняет порядок элементов в списке.
-     * {@code FetchType.LAZY} для отложенной загрузки.
-     */
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "execution_path", joinColumns = @JoinColumn(name = "test_run_id"))
     @OrderColumn(name = "step_index")
     private List<AiDecisionMetadata> executionPath = new ArrayList<>();
 
-    /**
-     * Список результатов анализа, связанных с данным тестовым запуском.
-     * {@code CascadeType.ALL} означает, что все операции (сохранение, удаление) будут каскадно применяться.
-     * {@code orphanRemoval = true} удаляет дочерние сущности, если они отсоединяются от родителя.
-     * {@code FetchType.EAGER} для немедленной загрузки.
-     */
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "test_run_id")
+    private String appVersion;
+    private String environment;
+    private String testSuite;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "test_run_tags", joinColumns = @JoinColumn(name = "test_run_id"))
+    @Column(name = "tag_name")
+    private List<String> testTags = new ArrayList<>();
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "name", column = @Column(name = "env_name")),
+            @AttributeOverride(name = "osType", column = @Column(name = "env_os_type")),
+            @AttributeOverride(name = "osVersion", column = @Column(name = "env_os_version")),
+            @AttributeOverride(name = "browserType", column = @Column(name = "env_browser_type")),
+            @AttributeOverride(name = "browserVersion", column = @Column(name = "env_browser_version")),
+            @AttributeOverride(name = "screenResolution", column = @Column(name = "env_screen_resolution")),
+            @AttributeOverride(name = "deviceType", column = @Column(name = "env_device_type")),
+            @AttributeOverride(name = "deviceName", column = @Column(name = "env_device_name")),
+            @AttributeOverride(name = "driverVersion", column = @Column(name = "env_driver_version")),
+            @AttributeOverride(name = "appBaseUrl", column = @Column(name = "env_app_base_url", length = 512))
+    })
+    private EnvironmentDetailsDTO environmentDetails;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "screenshotUrls", column = @Column(name = "artifact_screenshot_urls", length = 1000)),
+            @AttributeOverride(name = "videoUrl", column = @Column(name = "artifact_video_url", length = 512)),
+            @AttributeOverride(name = "appLogUrls", column = @Column(name = "artifact_app_log_urls", length = 1000)),
+            @AttributeOverride(name = "browserConsoleLogUrl", column = @Column(name = "artifact_browser_console_log_url", length = 512)),
+            @AttributeOverride(name = "harFileUrl", column = @Column(name = "artifact_har_file_url", length = 512))
+    })
+    private TestArtifactsDTO artifacts;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "test_run_custom_metadata", joinColumns = @JoinColumn(name = "test_run_id"))
+    @MapKeyColumn(name = "meta_key")
+    @Column(name = "meta_value", length = 1000)
+    private Map<String, String> customMetadata;
+
+    @OneToMany(mappedBy = "testRun", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AnalysisResult> analysisResults = new ArrayList<>();
 
-    /**
-     * Конфигурация тестового запуска (версия приложения, окружение и т.д.).
-     * {@code FetchType.LAZY} для отложенной загрузки.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "configuration_id")
     private TestConfiguration configuration;
+
+    /**
+     * Вспомогательный метод для добавления результатов анализа.
+     * Устанавливает двунаправленную связь.
+     *
+     * @param result Результат анализа для добавления.
+     */
+    public void addAnalysisResult(AnalysisResult result) {
+        if (analysisResults == null) {
+            analysisResults = new ArrayList<>();
+        }
+        analysisResults.add(result);
+        // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Вызываем setTestRun с 'this' (текущий объект TestRun),
+        // потому что AnalysisResult теперь содержит ссылку на объект TestRun, а не String ID.
+        result.setTestRun(this);
+    }
 }

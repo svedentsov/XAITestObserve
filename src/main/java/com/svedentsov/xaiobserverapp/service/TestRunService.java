@@ -1,6 +1,7 @@
 package com.svedentsov.xaiobserverapp.service;
 
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
+import com.svedentsov.xaiobserverapp.model.AnalysisResult;
 import com.svedentsov.xaiobserverapp.model.TestConfiguration;
 import com.svedentsov.xaiobserverapp.model.TestRun;
 import com.svedentsov.xaiobserverapp.repository.TestConfigurationRepository;
@@ -15,13 +16,17 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+
 
 /**
  * Сервис для обработки и управления жизненным циклом тестовых запусков.
  * Отвечает за сохранение событий тестов, их анализ, управление конфигурациями
  * и предоставление доступа к данным тестовых запусков.
+ * Обновлен для обработки расширенных DTO.
  */
 @Service
 @RequiredArgsConstructor
@@ -44,19 +49,21 @@ public class TestRunService {
     @Transactional
     public void processAndSaveTestEvent(FailureEventDTO event) {
         validateFailureEventDTO(event);
-
         TestRun testRun = convertToTestRun(event);
-        // Выполняем автоматический анализ причин сбоя
-        testRun.setAnalysisResults(rcaService.analyzeTestRun(event));
-
-        // Получаем или создаем конфигурацию, связанную с этим тестовым запуском
+        // 1. Находим или создаем конфигурацию
         TestConfiguration config = findOrCreateConfiguration(event);
         testRun.setConfiguration(config);
-
+        // 2. Первое сохранение TestRun для фиксации его ID в базе данных.
         testRunRepository.save(testRun);
-        logger.info("Тестовый запуск с ID {} успешно сохранен.", testRun.getId());
+        logger.info("Тестовый запуск с ID {} временно сохранен для получения ID.", testRun.getId());
+        // 3. Выполняем RCA и связываем результаты.
+        List<AnalysisResult> analysisResults = rcaService.analyzeTestRun(event);
+        analysisResults.forEach(testRun::addAnalysisResult);
+        // 4. Второе сохранение TestRun для персистентности результатов анализа.
+        testRunRepository.save(testRun);
+        logger.info("Тестовый запуск с ID {} окончательно сохранен вместе с результатами анализа.", testRun.getId());
 
-        // Отправляем уведомление, если тест упал
+
         if (testRun.getStatus() == TestRun.TestStatus.FAILED) {
             notificationService.notifyAboutFailure(testRun);
         }
@@ -64,27 +71,54 @@ public class TestRunService {
 
     /**
      * Находит существующую тестовую конфигурацию или создает новую, если таковая не найдена.
-     * Конфигурация определяется по комбинации версии приложения, среды и тестового набора.
+     * Конфигурация определяется по комбинации версии приложения, среды, тестового набора,
+     * а теперь и по деталям окружения.
      *
      * @param event DTO события, содержащий данные о конфигурации.
      * @return Найденная или созданная сущность {@link TestConfiguration}.
      */
+    @Transactional
     private TestConfiguration findOrCreateConfiguration(FailureEventDTO event) {
         String appVersion = StringUtils.hasText(event.getAppVersion()) ? event.getAppVersion() : "unknown";
-        String environment = StringUtils.hasText(event.getEnvironment()) ? event.getEnvironment() : "unknown";
         String testSuite = StringUtils.hasText(event.getTestSuite()) ? event.getTestSuite() : "default";
 
-        String uniqueName = String.format("%s-%s-%s", appVersion, environment, testSuite).toLowerCase();
+        String environmentName = "unknown";
+        String environmentDetailsHash = "unknown_env";
 
-        return testConfigurationRepository.findByUniqueName(uniqueName)
-                .orElseGet(() -> {
-                    TestConfiguration newConfig = new TestConfiguration();
-                    newConfig.setAppVersion(appVersion);
-                    newConfig.setEnvironment(environment);
-                    newConfig.setTestSuite(testSuite);
-                    logger.info("Создана новая конфигурация: {}", uniqueName);
-                    return testConfigurationRepository.save(newConfig);
-                });
+        if (event.getEnvironmentDetails() != null) {
+            environmentName = StringUtils.hasText(event.getEnvironmentDetails().getName()) ? event.getEnvironmentDetails().getName() : "unknown";
+            // Убедитесь, что все поля, формирующие uniqueName, не null
+            String osType = event.getEnvironmentDetails().getOsType() != null ? event.getEnvironmentDetails().getOsType() : "";
+            String osVersion = event.getEnvironmentDetails().getOsVersion() != null ? event.getEnvironmentDetails().getOsVersion() : "";
+            String browserType = event.getEnvironmentDetails().getBrowserType() != null ? event.getEnvironmentDetails().getBrowserType() : "";
+            String browserVersion = event.getEnvironmentDetails().getBrowserVersion() != null ? event.getEnvironmentDetails().getBrowserVersion() : "";
+            String screenResolution = event.getEnvironmentDetails().getScreenResolution() != null ? event.getEnvironmentDetails().getScreenResolution() : "";
+            String deviceType = event.getEnvironmentDetails().getDeviceType() != null ? event.getEnvironmentDetails().getDeviceType() : "";
+            String deviceName = event.getEnvironmentDetails().getDeviceName() != null ? event.getEnvironmentDetails().getDeviceName() : "";
+            String driverVersion = event.getEnvironmentDetails().getDriverVersion() != null ? event.getEnvironmentDetails().getDriverVersion() : "";
+
+            environmentDetailsHash = String.format("%s-%s-%s-%s-%s-%s-%s-%s-%s",
+                    environmentName, osType, osVersion, browserType, browserVersion,
+                    screenResolution, deviceType, deviceName, driverVersion
+            ).toLowerCase().replaceAll("[^a-zA-Z0-9-]", "_"); // Замените небуквенно-цифровые символы на '_' или удалите
+        }
+
+        String uniqueName = String.format("%s-%s-%s-%s", appVersion, testSuite, environmentName, environmentDetailsHash);
+        synchronized (this) { // Блокировка на уровне объекта сервиса
+            Optional<TestConfiguration> existingConfig = testConfigurationRepository.findByUniqueName(uniqueName);
+            if (existingConfig.isPresent()) {
+                logger.debug("Найдена существующая конфигурация: {}", uniqueName);
+                return existingConfig.get();
+            } else {
+                TestConfiguration newConfig = new TestConfiguration();
+                newConfig.setAppVersion(appVersion);
+                newConfig.setTestSuite(testSuite);
+                newConfig.setEnvironment(environmentName);
+                newConfig.setUniqueName(uniqueName);
+                logger.info("Создана новая конфигурация: {}", uniqueName);
+                return testConfigurationRepository.save(newConfig);
+            }
+        }
     }
 
     /**
@@ -123,12 +157,12 @@ public class TestRunService {
         if (!StringUtils.hasText(event.getTestClass())) throw new IllegalArgumentException("TestClass обязателен.");
         if (!StringUtils.hasText(event.getTestMethod())) throw new IllegalArgumentException("TestMethod обязателен.");
         if (!StringUtils.hasText(event.getStatus())) throw new IllegalArgumentException("Status обязателен.");
-        if (event.getTimestamp() <= 0) throw new IllegalArgumentException("Timestamp должен быть положительным.");
+        if (event.getStartTime() <= 0) throw new IllegalArgumentException("StartTime должен быть положительным.");
     }
 
     /**
      * Преобразует объект {@link FailureEventDTO} в сущность {@link TestRun}.
-     * Выполняет маппинг полей, включая преобразование Unix-времени в {@link LocalDateTime}.
+     * Выполняет маппинг всех доступных полей, включая временные метки и детали.
      *
      * @param event DTO для преобразования.
      * @return Новый объект сущности {@link TestRun}.
@@ -138,17 +172,37 @@ public class TestRunService {
         testRun.setId(event.getTestRunId());
         testRun.setTestClass(event.getTestClass());
         testRun.setTestMethod(event.getTestMethod());
-        testRun.setTimestamp(LocalDateTime.ofInstant(
-                Instant.ofEpochMilli(event.getTimestamp()),
-                ZoneId.systemDefault()
-        ));
+
+        testRun.setStartTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getStartTime()), ZoneId.systemDefault()));
+        testRun.setEndTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getEndTime()), ZoneId.systemDefault()));
+        testRun.setDurationMillis(event.getDurationMillis());
+        testRun.setTimestamp(LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getEndTime()), ZoneId.systemDefault()));
+
         testRun.setStatus(TestRun.TestStatus.valueOf(event.getStatus().toUpperCase()));
         testRun.setExceptionType(event.getExceptionType());
+        testRun.setExceptionMessage(event.getExceptionMessage());
         testRun.setStackTrace(event.getStackTrace());
         testRun.setFailedStep(event.getFailedStep());
         if (event.getExecutionPath() != null) {
             testRun.setExecutionPath(event.getExecutionPath());
         }
+        testRun.setAppVersion(event.getAppVersion());
+        if (event.getEnvironmentDetails() != null && StringUtils.hasText(event.getEnvironmentDetails().getName())) {
+            testRun.setEnvironment(event.getEnvironmentDetails().getName());
+        } else {
+            testRun.setEnvironment("unknown");
+        }
+
+        testRun.setTestSuite(event.getTestSuite());
+        if (event.getTestTags() != null) {
+            testRun.setTestTags(new ArrayList<>(event.getTestTags()));
+        }
+        testRun.setEnvironmentDetails(event.getEnvironmentDetails());
+        testRun.setArtifacts(event.getArtifacts());
+        if (event.getCustomMetadata() != null) {
+            testRun.setCustomMetadata(new HashMap<>(event.getCustomMetadata()));
+        }
+
         return testRun;
     }
 }

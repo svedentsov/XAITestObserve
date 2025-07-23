@@ -106,15 +106,25 @@ public class DashboardApiController {
     public ResponseEntity<AnalysisFeedback> submitFeedback(
             @PathVariable Long analysisId,
             @RequestBody AnalysisFeedbackDTO feedbackDTO) {
-        logger.info("Получена обратная связь для анализа ID {}: {}", analysisId, feedbackDTO.isCorrect());
+        logger.info("Получена обратная связь для анализа ID {}: isCorrect={}, userProvidedReason='{}'",
+                analysisId, feedbackDTO.getIsAiSuggestionCorrect(), feedbackDTO.getUserProvidedReason());
+
         AnalysisResult analysisResult = analysisResultRepository.findById(analysisId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Анализ с ID " + analysisId + " не найден"));
+
+        // Обновляем флаг userConfirmedCorrect в AnalysisResult на основе обратной связи
+        analysisResult.setUserConfirmedCorrect(feedbackDTO.getIsAiSuggestionCorrect());
+        analysisResultRepository.save(analysisResult); // Сохраняем обновленный AnalysisResult
+
         AnalysisFeedback feedback = new AnalysisFeedback();
         feedback.setAnalysisResult(analysisResult);
-        feedback.setCorrect(feedbackDTO.isCorrect());
-        feedback.setUserComment(feedbackDTO.getUserComment());
-        feedback.setUsername(StringUtils.hasText(feedbackDTO.getUsername()) ? feedbackDTO.getUsername() : "anonymous");
-        feedback.setFeedbackTimestamp(LocalDateTime.now());
+        feedback.setIsAiSuggestionCorrect(feedbackDTO.getIsAiSuggestionCorrect()); 
+        feedback.setUserProvidedReason(feedbackDTO.getUserProvidedReason());     
+        feedback.setUserProvidedSolution(feedbackDTO.getUserProvidedSolution());   
+        feedback.setComments(feedbackDTO.getComments());                       
+        feedback.setUserId(StringUtils.hasText(feedbackDTO.getUserId()) ? feedbackDTO.getUserId() : "anonymous"); 
+        feedback.setFeedbackTimestamp(LocalDateTime.now()); // Текущее время для фидбека
+
         AnalysisFeedback savedFeedback = analysisFeedbackRepository.save(feedback);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedFeedback);
     }
