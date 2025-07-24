@@ -19,7 +19,7 @@
         </div>
         <div class="header-actions">
             <form th:action="@{/demo/create}" method="post" class="create-demo-form-header">
-                <button type="submit" class="btn btn-primary" aria-label="Создать демо">
+                <button type="submit" class="btn btn-primary" aria-label="Создать новый демо-запуск теста">
                     <i class="fa-solid fa-plus" aria-hidden="true"></i> Создать демо
                 </button>
             </form>
@@ -31,35 +31,28 @@
     <div class="container-fluid">
         <section class="left-panel">
             <div class="tabs">
-                <div class="tab-buttons">
-                    <button class="tab-button active" data-tab="overview">Сводка</button>
-                    <button class="tab-button" data-tab="widgets">Виджеты</button>
+                <div class="tab-buttons" role="tablist">
+                    <button class="tab-button active" data-tab="overview" role="tab" aria-selected="true" id="tab-overview">Сводка</button>
+                    <button class="tab-button" data-tab="widgets" role="tab" aria-selected="false" id="tab-widgets">Виджеты</button>
                 </div>
-                <div id="overviewTabContent" class="tab-content active">
-                    <div th:if="${message}" class="alert-message success" style="display:none;" role="alert">
-                        <p th:text="${message}"></p>
-                    </div>
-                    <div th:if="${error}" class="alert-message error" style="display:none;" role="alert">
-                        <p th:text="${error}"></p>
-                    </div>
+                <div id="overviewTabContent" class="tab-content active" role="tabpanel" aria-labelledby="tab-overview">
+                    <div th:if="${message}" class="initial-alert-message success" style="display:none;" th:text="${message}" role="status"></div>
+                    <div th:if="${error}" class="initial-alert-message error" style="display:none;" th:text="${error}" role="alert"></div>
 
                     <div class="test-list-wrapper">
                         <table class="test-list-table">
                             <thead>
                             <tr>
-                                <th>Метод Теста</th>
-                                <th>Статус</th>
-                                <th>Окружение</th>
-                                <th>Версия</th>
-                                <th>Время Запуска</th>
+                                <th scope="col" class="status-header"></th> <th scope="col">Метод Теста</th>
+                                <th scope="col">Окружение</th>
+                                <th scope="col">Версия</th>
+                                <th scope="col">Время Запуска</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="run : ${testRuns}" class="test-row" th:data-id="${run.id}" tabindex="0" role="button"
-                                aria-label="Просмотреть детали запуска теста">
-                                <td class="test-method-cell" th:text="${run.testMethod}"></td>
-                                <td>
-                                    <span th:switch="${run.status.name()}" class="status-indicator">
+                            <tr th:each="run : ${testRuns}" class="test-row" th:data-id="${run.id}" tabindex="0"
+                                aria-label="Просмотреть детали запуска теста: [[${run.testMethod}]] со статусом [[${run.status.name()}]]">
+                                <td> <span th:switch="${run.status.name()}" class="status-indicator">
                                         <i th:case="'PASSED'" class="fa-solid fa-circle-check status-icon success-icon"
                                            title="Успех" aria-label="Тест успешно пройден"></i>
                                         <i th:case="'FAILED'" class="fa-solid fa-circle-xmark status-icon failure-icon"
@@ -68,17 +61,17 @@
                                            title="Пропущен" aria-label="Тест пропущен"></i>
                                     </span>
                                 </td>
+                                <td class="test-method-cell" th:text="${run.testMethod}"></td>
                                 <td>
                                     <span class="badge badge-env" th:text="${run.configuration?.environment ?: 'N/A'}"></span>
                                 </td>
                                 <td th:text="${run.configuration?.appVersion ?: 'N/A'}"></td>
-                                <td th:text="${#temporals.format(run.timestamp, 'dd-MM HH:mm:ss')}"></td>
-                            </tr>
+                                <td th:text="${#temporals.format(run.timestamp, 'yyyy.MM.dd HH:mm:ss')}"></td> </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <div id="widgetsTabContent" class="tab-content">
+                <div id="widgetsTabContent" class="tab-content" role="tabpanel" aria-labelledby="tab-widgets">
                     <div id="stats-container" class="stats-section">
                         <p class="loading-message">Загрузка статистики...</p>
                     </div>
@@ -86,25 +79,25 @@
                     <div id="graphs-section" class="graphs-section">
                         <h3>Тренды прохождения тестов</h3>
                         <div class="chart-container">
-                            <canvas id="passRateChart"></canvas>
+                            <canvas id="passRateChart" aria-label="График тренда прохождения тестов"></canvas>
                         </div>
                         <h3>Топ 5 самых медленных тестов</h3>
                         <div class="chart-container">
-                            <canvas id="slowTestsChart"></canvas>
+                            <canvas id="slowTestsChart" aria-label="График топ 5 самых медленных тестов"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="right-panel">
+        <aside class="right-panel">
             <div id="rightPanelContent" class="right-panel-content">
                 <div class="placeholder-content">
                     <i class="fa-regular fa-hand-pointer placeholder-icon" aria-hidden="true"></i>
                     <p>Выберите тестовый запуск из списка, чтобы увидеть детали.</p>
                 </div>
             </div>
-        </section>
+        </aside>
     </div>
 </main>
 

@@ -1,71 +1,59 @@
-/* Импорт шрифта Roboto из Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+/* Добавляем Google Fonts для робото моно */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 
-/*
- * Root-переменные CSS для определения цветовой палитры,
- * отступов, радиусов скругления и теней, используемых по всему приложению.
- * Это обеспечивает легкую кастомизацию и согласованный дизайн.
- */
 :root {
     /* Цвета */
-    --color-background: #f8f9fa; /* Основной цвет фона страницы */
-    --color-panel-background: #ffffff; /* Цвет фона панелей/карточек */
-    --color-border: #e0e0e0; /* Цвет границ элементов */
-    --color-text-primary: #202124; /* Основной цвет текста */
-    --color-text-secondary: #5f6368; /* Второстепенный цвет текста (менее заметный) */
-    --color-accent: #1a73e8; /* Акцентный цвет (например, для кнопок, активных вкладок) */
-    --color-accent-hover: #176cd9; /* Акцентный цвет при наведении */
+    --color-background: #ffffff; /* Белый фон */
+    --color-panel-background: #ffffff; /* Все панели белые */
+    --color-border: #e8e8e8; /* Очень светлая граница */
+    --color-text-primary: #3c4043; /* Темно-серый для основного текста */
+    --color-text-secondary: #70757a; /* Средне-серый для второстепенного текста */
+    --color-accent: #1a73e8; /* Google Blue */
+    --color-accent-hover: #176cd9;
+    --color-accent-light: #e8f0fe; /* Светлый Google Blue */
+    --color-light-grey: #f9f9f9; /* Еле заметный серый */
 
-    --color-success: #1e8e3e; /* Цвет для успешного статуса */
-    --color-failure: #d93025; /* Цвет для статуса "провалено" */
-    --color-skipped: #f29900; /* Цвет для статуса "пропущено" */
-    --color-success-background: #e6f4ea; /* Цвет фона для успешного статуса */
-    --color-failure-background: #fce8e6; /* Цвет фона для статуса "провалено" */
-    --color-skipped-background: #fef7e0; /* Цвет фона для статуса "пропущено" */
+    /* Цвета статусов - теперь более приглушенные, но узнаваемые */
+    --color-success: #1e8e3e; /* Зеленый */
+    --color-failure: #d93025; /* Красный */
+    --color-skipped: #f29900; /* Оранжевый */
+    --color-success-background: #e6f4ea; /* Очень светлый зеленый */
+    --color-failure-background: #fce8e6; /* Очень светлый красный */
+    --color-skipped-background: #fef7e0; /* Очень светлый оранжевый */
 
-    /* Отступы (Spacing) */
-    --spacing-xs: 4px; /* Очень маленький отступ */
-    --spacing-sm: 8px; /* Маленький отступ */
-    --spacing-md: 16px; /* Средний отступ */
-    --spacing-lg: 24px; /* Большой отступ */
-    --spacing-xl: 32px; /* Очень большой отступ */
+    /* Отступы и размеры */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
 
-    /* Радиусы скругления границ (Border Radius) */
-    --border-radius-sm: 4px; /* Малый радиус */
-    --border-radius-md: 8px; /* Средний радиус */
-    --border-radius-lg: 12px; /* Большой радиус */
-    --border-radius-pill: 9999px; /* Для создания "пилюль" (очень сильно скругленных элементов) */
+    /* Радиусы скругления */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-pill: 9999px;
 
-    /* Тени (Shadows) */
-    --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.1); /* Малая тень */
-    --shadow-md: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15); /* Средняя тень */
+    /* Тени */
+    --shadow-xxs: 0 0.25px 0.5px rgba(0,0,0,0.02), 0 0.5px 1px rgba(0,0,0,0.03); /* Ещё более слабая тень */
+    --shadow-xs: 0 0.5px 1px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05); /* Очень слабая тень */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 2px 4px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 8px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1); /* Более выраженная тень для хедера */
+    --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/*
- * Сброс box-sizing для всех элементов.
- * border-box включает padding и border в общую ширину/высоту элемента,
- * что упрощает расчет размеров и макетирование.
- */
+/* Общие стили */
 *, *::before, *::after {
     box-sizing: border-box;
 }
 
-/*
- * Базовые стили для html и body.
- * Устанавливают 100% высоту для корневых элементов, убирают внешние отступы.
- */
 html, body {
     height: 100%;
     margin: 0;
     padding: 0;
 }
 
-/*
- * Стили для тела документа.
- * Устанавливают шрифт, цвет фона, цвет текста, высоту строки и
- * включают Flexbox для вертикального расположения основных разделов приложения.
- * overflow: hidden предотвращает прокрутку всего документа.
- */
 body {
     font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
     background-color: var(--color-background);
@@ -73,626 +61,626 @@ body {
     line-height: 1.5;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Предотвращает прокрутку всего body */
+    overflow: hidden;
+    font-size: 15px; /* Единый базовый размер шрифта */
 }
 
-/*
- * Элементы шапки и подвала приложения.
- * flex-shrink: 0 предотвращает их сжатие, сохраняя их высоту.
- */
+/* Макет приложения */
 .app-header, .app-footer {
     flex-shrink: 0;
 }
 
-/*
- * Основной контент приложения.
- * flex: 1 позволяет ему занимать все доступное пространство.
- * Использует Flexbox для горизонтального расположения панелей.
- */
 .app-main {
-    flex: 1; /* Занимает все доступное вертикальное пространство */
+    flex: 1;
     display: flex;
-    padding: var(--spacing-md);
-    gap: var(--spacing-md); /* Промежуток между левой и правой панелями */
-    min-height: 0; /* Важно для корректной работы overflow в дочерних элементах flex-контейнера */
+    /* Убираем padding отсюда, чтобы контейнер мог прижаться к краям */
+    /* padding: var(--spacing-md); */
+    /* gap: var(--spacing-md); */ /* Gap тоже убираем, так как панели теперь будут внутри контейнера */
+    min-height: 0;
 }
 
-/*
- * Основной контейнер, который обертывает левую и правую панели.
- * Устанавливает фон, радиус скругления, тень и включает Flexbox.
- */
 .container-fluid {
     width: 100%;
     height: 100%;
     background: var(--color-panel-background);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-md);
+    /* border-radius: var(--border-radius-lg); */ /* Убираем border-radius, так как панель будет прижата */
     display: flex;
-    overflow: hidden; /* Скрывает содержимое, выходящее за границы */
+    overflow: hidden;
+    /* Убираем общую тень для контейнера, тени теперь будут на панелях */
+    /* box-shadow: var(--shadow-sm); */
 }
 
-/*
- * Стили для левой панели.
- * Имеет фиксированную ширину, границу справа и использует Flexbox для вертикального расположения.
- */
+/* Панели */
 .left-panel {
-    flex: 0 0 600px; /* Фиксированная ширина 600px, не сжимается и не растягивается */
-    border-right: 1px solid var(--color-border);
+    flex: 0 0 650px; /* Увеличил ширину левой панели для таблицы */
+    background-color: var(--color-light-grey); /* Фон левой панели */
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Скрывает содержимое, выходящее за границы */
+    overflow: hidden;
+    /* Убрали тень справа для визуального разделения */
+    box-shadow: none; /* Убрали box-shadow */
+    position: relative; /* Для правильной работы z-index, если потребуется */
+    z-index: 1;
+    /* Добавляем padding для содержимого левой панели */
+    padding: var(--spacing-md);
 }
 
-/*
- * Стили для правой панели.
- * Занимает оставшееся пространство, имеет прокрутку по вертикали и внутренние отступы.
- */
 .right-panel {
-    flex: 1; /* Занимает оставшееся горизонтальное пространство */
-    overflow-y: auto; /* Включает вертикальную прокрутку, если содержимое превышает высоту */
-    padding: var(--spacing-lg);
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    z-index: 0;
+    background-color: var(--color-panel-background); /* Остается белым */
+    position: relative; /* Необходимо для позиционирования псевдоэлемента */
 }
 
-/*
- * Стили для шапки приложения.
- * Устанавливает фон, внутренние отступы и тень.
- */
+.right-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--spacing-md); /* Высота равна верхнему паддингу */
+    background-color: var(--color-light-grey); /* Светло-серый цвет */
+    z-index: -1; /* Чтобы был под содержимым */
+}
+
+/* Заголовок приложения */
 .app-header {
     background-color: var(--color-panel-background);
     padding: var(--spacing-sm) var(--spacing-lg);
-    box-shadow: var(--shadow-sm);
-    z-index: 100; /* Обеспечивает отображение поверх других элементов */
+    box-shadow: var(--shadow-xxs); /* Используем ещё более слабую тень */
+    z-index: 100;
+    border-bottom: 1px solid var(--color-border); /* Дополнительная граница */
 }
 
-/*
- * Контейнер для содержимого шапки, использует Flexbox для выравнивания элементов.
- */
 .header-content {
     display: flex;
-    justify-content: space-between; /* Распределяет элементы по краям */
-    align-items: center; /* Выравнивает элементы по центру по вертикали */
+    justify-content: space-between;
+    align-items: center;
 }
 
-/*
- * Контейнер для заголовка шапки и иконки.
- */
 .header-title {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm); /* Промежуток между иконкой и текстом */
+    gap: var(--spacing-sm);
 }
 
-/*
- * Текст заголовка в шапке.
- */
 .header-title-text {
-    font-size: 20px;
+    font-size: 20px; /* Чуть уменьшил */
     font-weight: 500;
     margin: 0;
+    color: var(--color-text-primary);
 }
 
-/*
- * Иконка в шапке.
- */
 .header-icon {
     color: var(--color-accent);
     font-size: 22px;
 }
 
-/*
- * Общие стили для кнопок.
- */
+/* Кнопки */
 .btn {
     border: none;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     cursor: pointer;
     font-weight: 500;
-    transition: background-color 0.2s ease, transform 0.1s ease; /* Плавные переходы для интерактивности */
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    font-size: 14px;
+    font-size: 14px; /* Единый размер для кнопок */
+    text-decoration: none;
 }
 
-/* Эффект при наведении на кнопку */
 .btn:hover {
-    transform: translateY(-1px); /* Небольшой подъем кнопки */
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Стили для основной (primary) кнопки */
+.btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-inset); /* Небольшая внутренняя тень при нажатии */
+}
+
 .btn-primary {
     background-color: var(--color-accent);
     color: white;
 }
 
-/* Эффект при наведении на основную кнопку */
 .btn-primary:hover {
     background-color: var(--color-accent-hover);
 }
 
-/* --- Стили для вкладок (Tabs) --- */
+/* Вкладки */
 .tabs {
     display: flex;
     flex-direction: column;
     height: 100%;
-    flex: 1; /* Позволяет вкладкам занимать доступное пространство */
+    flex: 1;
 }
 
-/* Контейнер для кнопок вкладок */
 .tab-buttons {
     display: flex;
     border-bottom: 1px solid var(--color-border);
-    background-color: var(--color-background);
-    flex-shrink: 0; /* Предотвращает сжатие кнопок */
-    padding: 0 var(--spacing-md); /* Горизонтальные отступы для кнопок */
+    background-color: var(--color-panel-background); /* Фон кнопок вкладок теперь белый */
+    flex-shrink: 0;
+    /* padding: 0 var(--spacing-md); */ /* Убираем padding, чтобы кнопки прижимались к краям левой панели */
 }
 
-/* Стили для отдельной кнопки вкладки */
 .tab-button {
     background-color: transparent;
     border: none;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg); /* 16px сверху/снизу, 24px слева/справа */
     cursor: pointer;
-    font-size: 15px;
+    font-size: 15px; /* Единый размер */
     font-weight: 500;
-    color: var(--color-text-secondary);
-    border-bottom: 2px solid transparent; /* Подчеркивание для активной вкладки */
+    color: var(--color-text-secondary); /* Второстепенный цвет текста */
+    border-bottom: 2px solid transparent;
     transition: all 0.2s ease;
-    outline: none; /* Убирает обводку при фокусе */
+    outline: none;
+    flex-grow: 1;
+    text-align: center;
 }
 
-/* Эффект при наведении на кнопку вкладки */
 .tab-button:hover {
     color: var(--color-accent);
 }
 
-/* Стили для активной кнопки вкладки */
 .tab-button.active {
     color: var(--color-accent);
-    border-bottom: 2px solid var(--color-accent); /* Активное подчеркивание */
+    border-bottom: 2px solid var(--color-accent);
 }
 
-/* Контейнер для содержимого вкладки */
+.tab-button:focus-visible {
+    outline: 2px solid var(--color-accent-hover);
+    outline-offset: -2px;
+}
+
 .tab-content {
-    display: none; /* Скрыто по умолчанию */
-    flex: 1; /* Позволяет содержимому занимать доступное пространство */
-    overflow-y: auto; /* Включает прокрутку для содержимого вкладки */
-    padding-top: var(--spacing-md); /* Отступ сверху */
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding-top: var(--spacing-md);
 }
 
-/* Стили для активного содержимого вкладки */
 .tab-content.active {
-    display: flex; /* Использует Flexbox для расположения внутренних секций */
+    display: flex;
     flex-direction: column;
 }
-/* --- Конец стилей для вкладок --- */
 
-
-/*
- * Секция статистики.
- * Использует background-color и padding.
- */
+/* Секция статистики */
 .stats-section {
     padding: var(--spacing-md);
-    background-color: var(--color-background);
-    flex-shrink: 0; /* Предотвращает сжатие */
+    background-color: var(--color-light-grey); /* Фон секции статистики теперь серый */
+    flex-shrink: 0;
+    min-height: fit-content;
 }
 
-/* Сообщение о загрузке */
 .loading-message {
     text-align: center;
     color: var(--color-text-secondary);
     padding: var(--spacing-md) 0;
 }
 
-/* Сетка для карточек статистики */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Адаптивная сетка */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-md);
 }
 
-/* Общие стили для карточки статистики */
 .stats-card {
     background-color: var(--color-panel-background);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm); /* Уменьшил padding для уменьшения высоты */
     border-radius: var(--border-radius-md);
     text-align: center;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border); /* Легкая граница вместо сильной тени */
+    /* Удалена тень для карточки статистики */
 }
 
-/* Заголовок в карточке статистики */
 .stats-card h4 {
-    margin: 0 0 var(--spacing-sm) 0;
-    font-size: 13px;
+    margin: 0 0 var(--spacing-xs) 0; /* Уменьшил нижний отступ */
+    font-size: 13px; /* Мелкий текст */
     color: var(--color-text-secondary);
-    font-weight: 500;
+    font-weight: 400; /* Обычное начертание */
+    white-space: nowrap; /* Запрещаем перенос строк для заголовков карточек */
+    overflow: hidden; /* Скрываем излишки текста */
+    text-overflow: ellipsis; /* Добавляем многоточие, если текст не помещается */
 }
 
-/* Значение в карточке статистики */
 .stats-card p {
     margin: 0;
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 20px; /* Чуть уменьшил для компактности */
+    font-weight: 500; /* Среднее начертание */
     color: var(--color-text-primary);
 }
 
-/* Цвета значений для карточек "Passed" и "Failed" */
 .stats-card.status-passed p { color: var(--color-success); }
 .stats-card.status-failed p { color: var(--color-failure); }
 
-/*
- * Карточка "Самые падающие тесты".
- * Использует `<details>` и `<summary>` для скрытия/показа содержимого.
- */
+/* Изменения для .failing-tests-card - теперь это div */
 .failing-tests-card {
     background-color: var(--color-panel-background);
     border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: 0;
-    overflow: hidden;
-    margin-bottom: var(--spacing-md); /* Отступ снизу */
+    border: 1px solid var(--color-border); /* Легкая граница */
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md); /* Добавил padding сюда, так как нет summary */
+    /* Удалена тень для failing-tests-card */
 }
 
-/* Заголовок `<summary>` в карточке "Самые падающие тесты" */
-.failing-tests-card summary {
-    display: block; /* Важно для корректного отображения стрелки */
-    padding: var(--spacing-md);
-    font-size: 14px;
+/* Новый стиль для заголовка внутри .failing-tests-card */
+.failing-tests-card h4 {
+    margin: 0 0 var(--spacing-md) 0; /* Отступ снизу для заголовка */
+    font-size: 14px; /* Немного уменьшил */
     font-weight: 500;
-    cursor: pointer;
-    outline: none;
-    position: relative;
-    user-select: none; /* Запрещает выделение текста */
+    color: var(--color-text-primary);
 }
 
-/* Скрывает стандартную стрелку `<details>` */
-.failing-tests-card summary::-webkit-details-marker {
-    display: none;
-}
-
-/* Добавляет кастомную стрелку с помощью Font Awesome */
-.failing-tests-card summary::after {
-    content: '\f078'; /* Код иконки стрелки вниз */
-    font-family: "Font Awesome 6 Free"; /* Использование Font Awesome */
-    font-weight: 900; /* Жирный стиль для иконки Font Awesome */
-    position: absolute;
-    right: var(--spacing-md);
-    top: 50%;
-    transform: translateY(-50%) rotate(0deg); /* Исходное положение стрелки */
-    transition: transform 0.2s ease; /* Плавный поворот стрелки */
-}
-
-/* Поворот стрелки при открытом состоянии `<details>` */
-.failing-tests-card[open] summary::after {
-    transform: translateY(-50%) rotate(180deg);
-}
-
-/* Контент внутри карточки "Самые падающие тесты" */
 .failing-tests-card .content {
-    padding: 0 var(--spacing-md) var(--spacing-md);
+    padding: 0; /* Убрал padding, т.к. он теперь на .failing-tests-card */
 }
 
-/* Стили для списка падающих тестов */
 .failing-tests-card ul {
-    list-style: none; /* Убирает маркеры списка */
+    list-style: none;
     padding: 0;
     margin: 0;
-    font-size: 14px;
+    font-size: 14px; /* Единый размер */
 }
 
-/* Стили для элемента списка падающих тестов */
 .failing-tests-card li {
     display: flex;
-    justify-content: space-between; /* Распределяет название теста и количество по краям */
+    justify-content: space-between;
     padding: var(--spacing-xs) 0;
     border-bottom: 1px solid #f1f1f1;
 }
 
-/* Убирает нижнюю границу у последнего элемента списка */
 .failing-tests-card li:last-child {
     border-bottom: none;
 }
 
-/* Цвет для числа провалов */
 .failing-tests-card li strong {
     color: var(--color-failure);
 }
 
-/* Сообщение, если нет данных в карточке "Самые падающие тесты" */
 .failing-tests-card .no-data-message {
     text-align: center;
     color: var(--color-text-secondary);
     padding: var(--spacing-sm) 0;
 }
 
-/*
- * Секция графиков.
- */
+/* Секция графиков */
 .graphs-section {
     padding: var(--spacing-md);
-    background-color: var(--color-background);
+    background-color: var(--color-background); /* Белый фон */
     flex-shrink: 0;
-    overflow-y: auto; /* Включает прокрутку для секции графиков */
-    padding-bottom: var(--spacing-xl); /* Дополнительный отступ снизу */
+    overflow-y: auto;
+    padding-bottom: var(--spacing-xl);
 }
 
-/* Заголовки в секции графиков */
 .graphs-section h3 {
     margin: var(--spacing-lg) 0 var(--spacing-md) 0;
-    font-size: 16px;
+    font-size: 16px; /* Один размер для подзаголовков */
     color: var(--color-text-primary);
+    font-weight: 500; /* Среднее начертание */
 }
 
-/* Отступ сверху для первого заголовка в секции графиков */
 .graphs-section h3:first-child {
     margin-top: 0;
 }
 
-/* Контейнер для каждого графика */
 .chart-container {
     background-color: var(--color-panel-background);
     padding: var(--spacing-md);
     border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    height: 250px; /* Фиксированная высота для графика */
+    border: 1px solid var(--color-border); /* Легкая граница */
+    /* Удалена тень для chart-container */
+    height: 250px;
     margin-bottom: var(--spacing-md);
     position: relative;
 }
 
-/* Обеспечивает, что canvas занимает 100% ширины и высоты своего контейнера */
 .chart-container canvas {
     width: 100% !important;
     height: 100% !important;
 }
 
-/* Обертка для списка тестов, включает прокрутку */
+/* Список тестовых запусков (таблица) */
 .test-list-wrapper {
     flex: 1;
     overflow-y: auto;
+    /* padding: 0 var(--spacing-md); */ /* Убираем padding, так как он уже задан на .left-panel */
+    padding-top: var(--spacing-md); /* Добавляем padding-top для контента после табов */
 }
 
-/* Таблица списка тестов */
 .test-list-table {
     width: 100%;
-    border-collapse: collapse; /* Убирает двойные границы между ячейками */
+    border-collapse: collapse;
 }
 
-/* Заголовки столбцов таблицы */
 .test-list-table thead th {
-    position: sticky; /* Закрепляет заголовки при прокрутке */
-    top: 0; /* Прилипает к верхней части контейнера */
-    background-color: #f1f3f4;
-    padding: var(--spacing-sm) var(--spacing-md);
+    position: sticky;
+    top: 0;
+    background-color: var(--color-light-grey); /* Применил новый серый цвет */
+    padding: var(--spacing-xs) var(--spacing-md); /* Уменьшил padding для заголовков */
     text-align: left;
     font-weight: 500;
-    font-size: 13px;
+    font-size: 13px; /* Мелкий шрифт */
     color: var(--color-text-secondary);
-    z-index: 1; /* Обеспечивает отображение поверх содержимого таблицы */
-}
-
-/* Строка теста в таблице */
-.test-row {
-    cursor: pointer; /* Курсор-указатель для интерактивности */
+    z-index: 1;
     border-bottom: 1px solid var(--color-border);
-    transition: background-color 0.2s ease; /* Плавное изменение фона при наведении */
+    white-space: nowrap; /* Запрещаем перенос строк для заголовков столбцов */
+    overflow: hidden; /* Скрываем излишки текста */
+    text-overflow: ellipsis; /* Добавляем многоточие, если текст не помещается */
 }
 
-/* Эффект при наведении на строку теста */
+.test-row {
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.2s ease;
+}
+
 .test-row:hover {
-    background-color: #f1f3f4;
+    background-color: var(--color-light-grey); /* Применил новый серый цвет */
 }
 
-/* Стили для выбранной (активной) строки теста */
 .test-row.selected {
-    background-color: #e8f0fe;
+    background-color: var(--color-accent-light);
 }
 
-/* Обводка при фокусе на строке теста */
-.test-row:focus {
+.test-row:focus-visible {
     outline: 2px solid var(--color-accent-hover);
-    outline-offset: -2px; /* Обводка внутри элемента */
+    outline-offset: -2px;
 }
 
-/* Ячейки данных в строке теста */
 .test-row td {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-md); /* Уменьшил padding для строк таблицы */
     vertical-align: middle;
-    font-size: 14px;
+    font-size: 14px; /* Единый размер */
+    color: var(--color-text-primary);
 }
 
-/* Ячейка с названием тестового метода */
+.test-row td:first-child { /* Первая ячейка (статус) */
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-xs); /* Чуть больше отступ слева, меньше справа */
+    width: 30px; /* Фиксированная ширина для иконки статуса */
+    text-align: center; /* Центрируем иконку */
+}
+
 .test-method-cell {
-    font-weight: 500;
+    font-weight: 400; /* Обычное начертание */
 }
 
-/* Контейнер для индикатора статуса */
 .status-indicator {
     display: inline-block;
 }
 
-/* Иконка статуса */
 .status-icon {
     font-size: 18px;
     vertical-align: middle;
 }
 
-/* Цвета для иконок статуса */
 .success-icon { color: var(--color-success); }
 .failure-icon { color: var(--color-failure); }
 .skipped-icon { color: var(--color-skipped); }
 
-/* Общие стили для "бэйджей" */
 .badge {
     display: inline-block;
     padding: 3px var(--spacing-sm);
     border-radius: var(--border-radius-pill);
-    font-size: 12px;
-    font-weight: 500;
-    background-color: #e8eaed;
+    font-size: 12px; /* Очень мелкий шрифт */
+    font-weight: 400; /* Обычное начертание */
+    background-color: var(--color-light-grey); /* Применил новый серый цвет */
     color: var(--color-text-secondary);
-    white-space: nowrap; /* Предотвращает перенос текста */
+    white-space: nowrap;
 }
 
-/* Содержимое-заглушка, когда данные еще не выбраны или не загружены */
+/* Заглушка для правой панели */
 .placeholder-content {
     text-align: center;
     margin-top: 100px;
-    color: #999;
+    color: var(--color-text-secondary);
 }
 
-/* Иконка заглушки */
 .placeholder-icon {
     font-size: 48px;
     margin-bottom: var(--spacing-md);
 }
 
-/* Блок деталей в правой панели */
+/* Блоки деталей теста */
 .detail-block {
     margin-bottom: var(--spacing-xl);
-    padding-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0;
 }
 
-/* Убирает нижнюю границу у последнего блока деталей */
 .detail-block:last-child {
     border-bottom: none;
 }
 
-/* Заголовок блока деталей */
+/* Убираем верхний отступ для первого detail-block */
+.right-panel .detail-block:first-of-type {
+    padding-top: 0;
+}
+
 .detail-block h3 {
     margin-top: 0;
-    margin-bottom: var(--spacing-md);
-    font-size: 18px;
+    font-size: 15px;
+    font-weight: 500;
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     color: var(--color-text-primary);
+    box-sizing: border-box;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--color-panel-background);
+    /* Добавляем верхнюю границу, как и нижняя */
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    /* Добавляем тень сверху и снизу */
+    box-shadow: var(--shadow-xxs), 0 -0.25px 0.5px rgba(0,0,0,0.02), 0 -0.5px 1px rgba(0,0,0,0.03);
+    margin-left: calc(-1 * var(--spacing-lg));
+    margin-right: calc(-1 * var(--spacing-lg));
+    width: calc(100% + 2 * var(--spacing-lg));
+    z-index: 99;
+    /* Убрано position: sticky и top: 0 для отключения прилипания */
 }
 
-/* Сетка для информации в блоке деталей */
+/* Отступы для контента внутри detail-block */
+.detail-block > *:not(h3):first-of-type {
+    margin-top: var(--spacing-lg); /* Отступ для первого элемента после заголовка */
+}
+
+/* Результаты анализа AI */
+.analysis-result-item {
+    background: var(--color-panel-background); /* Фон карточки анализа AI остается белым */
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-accent);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-md); /* Оставляем margin-bottom для разделения карточек */
+    box-shadow: none;
+    font-size: 15px;
+}
+
+/* Убираем нижнюю границу для последнего элемента в detail-block */
+.detail-block > :last-child.info-grid,
+.detail-block > :last-child.analysis-result-item,
+.detail-block > :last-child.failure-subsection {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Адаптивная сетка */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: var(--spacing-sm) var(--spacing-md);
-    font-size: 14px;
+    font-size: 15px; /* Увеличил шрифт до 15px */
 }
 
-/* Параграф в сетке информации */
 .info-grid p {
     margin: 0;
 }
 
-/* Жирный текст (метки) в сетке информации */
 .info-grid p strong {
-    color: var(--color-text-secondary);
+    color: var(--color-text-secondary); /* Второстепенный цвет для подписей */
+    font-weight: 400; /* Обычное начертание */
     margin-right: 5px;
 }
 
-/* Общие стили для "бэйджей" статуса */
 .status-badge {
     padding: 4px 10px;
     border-radius: var(--border-radius-pill);
-    font-size: 13px;
+    font-size: 13px; /* Мелкий */
     font-weight: 500;
     white-space: nowrap;
 }
 
-/* Цвета для "бэйджей" статуса */
 .status-badge.status-passed { background-color: var(--color-success-background); color: var(--color-success); }
 .status-badge.status-failed { background-color: var(--color-failure-background); color: var(--color-failure); }
 .status-badge.status-skipped { background-color: var(--color-skipped-background); color: var(--color-skipped); }
 
-/* Элемент результата AI-анализа */
+/* Результаты анализа AI */
 .analysis-result-item {
-    background: #fdfdff;
-    border: 1px solid #e8e8e8;
-    border-left: 4px solid var(--color-accent); /* Левая граница акцентного цвета */
+    background: var(--color-panel-background);
+    border: 1px solid var(--color-border); /* Легкая граница */
+    border-left: 4px solid var(--color-accent);
     padding: var(--spacing-md);
-    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0; /* Скругление только справа */
-    margin-bottom: var(--spacing-md);
+    border-radius: var(--border-radius-md); /* Скругление всех углов */
+    margin-bottom: var(--spacing-md); /* Этот margin-bottom будет перекрыт общим стилем выше */
+    box-shadow: none;
+    font-size: 15px; /* Увеличил шрифт до 15px */
 }
 
-/* Заголовок элемента результата анализа */
 .analysis-result-item h4 {
     margin: 0 0 var(--spacing-sm) 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 16px;
+    font-size: 16px; /* Заголовок анализа */
+    font-weight: 500;
     color: var(--color-text-primary);
 }
 
-/* Стиль для показателя уверенности AI */
 .ai-confidence {
-    font-size: 13px;
+    font-size: 13px; /* Мелкий */
     padding: 3px var(--spacing-sm);
     border-radius: var(--border-radius-pill);
-    background: #e8f0fe;
+    background: var(--color-accent-light);
     color: var(--color-accent-hover);
     font-weight: 500;
 }
 
-/* Параграф в элементе результата анализа */
 .analysis-result-item p {
     margin: 0 0 var(--spacing-sm) 0;
+    font-size: 15px; /* Увеличил шрифт до 15px */
+    color: var(--color-text-primary);
 }
 
-/* Иконка в параграфе результата анализа */
+.analysis-result-item p strong {
+    font-weight: 500; /* Более явные подписи */
+}
+
 .analysis-result-item p i {
     color: var(--color-text-secondary);
     margin-right: var(--spacing-sm);
 }
 
-/* Детали (скрытое содержимое) в элементе результата анализа */
 .analysis-result-item details {
-    font-size: 14px;
+    font-size: 15px; /* Увеличил шрифт до 15px */
     margin-top: var(--spacing-sm);
 }
 
-/* Заголовок деталей (summary) в элементе результата анализа */
 .analysis-result-item summary {
     cursor: pointer;
     font-weight: 500;
     color: var(--color-accent);
+    outline: none;
 }
 
-/* Эффект при наведении на заголовок деталей */
 .analysis-result-item summary:hover {
     text-decoration: underline;
 }
 
-/* Блок предварительно отформатированного текста (например, для стектрейсов) */
+.analysis-result-item summary:focus-visible {
+    outline: 2px solid var(--color-accent-hover);
+    outline-offset: 2px;
+}
+
 pre {
-    background-color: #f1f3f4;
-    border: 1px solid #dadce0;
+    background-color: var(--color-light-grey); /* Применил новый серый цвет */
+    border: 1px solid var(--color-border);
     padding: var(--spacing-md);
     border-radius: var(--border-radius-md);
-    overflow-x: auto; /* Горизонтальная прокрутка, если текст слишком длинный */
-    white-space: pre-wrap; /* Перенос текста по словам */
-    word-wrap: break-word; /* Принудительный перенос длинных слов */
-    font-size: 13px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Roboto Mono', 'Consolas', 'Courier New', monospace;
+    font-size: 13px; /* Мелкий */
     color: var(--color-text-primary);
 }
 
-/* Специальные стили для блока pre, содержащего ошибку */
 pre.error-pre {
-    background-color: var(--color-failure-background);
+    background-color: var(--color-failure-background); /* Сохранил для ошибок */
     border-color: var(--color-failure);
     color: var(--color-failure);
 }
 
-/* Подсекция, связанная с причиной сбоя */
 .failure-subsection {
-    margin-bottom: var(--spacing-md);
+    margin-top: var(--spacing-md); /* Отступ от предыдущего элемента */
+    margin-bottom: var(--spacing-md); /* Этот margin-bottom будет перекрыт общим стилем выше */
+    font-size: 15px; /* Увеличил шрифт до 15px */
 }
 
-/* Заголовок подсекции сбоя */
+.failure-subsection:first-of-type {
+    margin-top: var(--spacing-md); /* Для первой секции сбоя */
+}
+
 .failure-subsection h4 {
     margin: 0 0 var(--spacing-sm) 0;
-    font-size: 15px;
+    font-size: 15px; /* Заголовки секций */
+    font-weight: 500;
     color: var(--color-text-primary);
 }
 
@@ -700,7 +688,7 @@ pre.error-pre {
 .feedback-section {
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-sm);
-    border-top: 1px dashed #ddd; /* Пунктирная верхняя граница */
+    border-top: 1px dashed var(--color-border); /* Более светлая пунктирная линия */
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -708,36 +696,33 @@ pre.error-pre {
     color: var(--color-text-secondary);
 }
 
-/* Контейнер для кнопок обратной связи */
 .feedback-buttons {
     display: flex;
     gap: var(--spacing-sm);
 }
 
-/* Кнопка обратной связи */
 .feedback-btn {
-    background: none;
-    border: 1px solid #ccc;
-    border-radius: 50%; /* Круглая форма */
+    background: var(--color-light-grey); /* Применил новый серый цвет */
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
     width: 32px;
     height: 32px;
     cursor: pointer;
     font-size: 16px;
-    color: #777;
-    transition: all 0.2s ease; /* Плавный переход */
+    color: var(--color-text-secondary);
+    transition: all 0.2s ease;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-shrink: 0;
 }
 
-/* Эффект при наведении на кнопку обратной связи */
 .feedback-btn:hover {
-    transform: scale(1.1); /* Увеличение при наведении */
-    border-color: #555;
-    color: #333;
+    transform: scale(1.1);
+    border-color: var(--color-accent); /* Акцентная рамка при наведении */
+    color: var(--color-accent);
 }
 
-/* Цвета для кнопок обратной связи при наведении, в зависимости от корректности */
 .feedback-btn[data-correct="true"]:hover {
     background-color: var(--color-success-background);
     border-color: var(--color-success);
@@ -750,128 +735,127 @@ pre.error-pre {
     color: var(--color-failure);
 }
 
-/* Сообщение о том, что обратная связь отправлена */
+.feedback-btn:focus-visible {
+    outline: 2px solid var(--color-accent-hover);
+    outline-offset: 2px;
+}
+
 .feedback-submitted-msg {
     font-style: italic;
     color: var(--color-success);
-    margin-left: auto; /* Выравнивает сообщение по правому краю */
+    margin-left: auto;
 }
 
-/* Визуализатор пути выполнения теста */
+/* Визуализатор пути выполнения */
 .execution-path-visualizer {
     list-style: none;
     padding: 0;
     margin: 0;
     position: relative;
+    margin-top: var(--spacing-md); /* Отступ от заголовка */
 }
 
-/* Вертикальная линия в визуализаторе пути выполнения */
 .execution-path-visualizer::before {
     content: '';
     position: absolute;
-    left: 11px; /* Позиционирование линии */
+    left: 11px;
     top: 5px;
     bottom: 5px;
     width: 2px;
-    background-color: #e0e0e0;
+    background-color: var(--color-border); /* Светлая линия */
 }
 
-/* Элемент списка шагов выполнения */
 .execution-path-visualizer li {
     position: relative;
-    padding: var(--spacing-xs) 0 var(--spacing-xs) var(--spacing-xl); /* Отступ для иконки */
+    padding: var(--spacing-xs) 0 var(--spacing-xs) var(--spacing-xl);
 }
 
-/* Иконка шага выполнения */
 .step-icon {
     position: absolute;
     left: 0;
     top: 8px;
     font-size: 20px;
-    background-color: var(--color-panel-background);
+    background-color: var(--color-panel-background); /* Белый фон для иконки */
     padding: 0 2px;
     border-radius: 50%;
-    color: #5f6368;
-    z-index: 1; /* Обеспечивает отображение поверх линии */
+    color: var(--color-text-secondary);
+    z-index: 1;
 }
 
-/* Цвета иконок шагов в зависимости от статуса */
 .step-passed .step-icon { color: var(--color-success); }
 .step-failed .step-icon { color: var(--color-failure); }
 .step-skipped .step-icon { color: var(--color-skipped); }
 
-/* Содержимое шага выполнения */
 .step-content {
-    background: #f8f9fa;
+    background: var(--color-light-grey); /* Применил новый серый цвет */
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     font-size: 14px;
     display: flex;
-    flex-wrap: wrap; /* Разрешает перенос элементов */
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: var(--spacing-sm);
-    border: 1px solid #eee;
+    border: 1px solid var(--color-border); /* Легкая граница */
 }
 
-/* Заголовок (действие) шага */
 .step-content strong {
-    flex-basis: 100%; /* Занимает всю ширину */
-    font-size: 15px;
+    flex-basis: 100%;
+    font-size: 15px; /* Чуть крупнее */
+    font-weight: 500;
     color: var(--color-text-primary);
 }
 
-/* Мелкий текст (локатор, уверенность) шага */
 .step-content small {
     color: var(--color-text-secondary);
-    flex-grow: 1; /* Растягивается, занимая доступное пространство */
+    flex-grow: 1;
     text-align: right;
+    font-size: 13px; /* Мелкий */
 }
 
-/* Подвал приложения */
+/* Футер */
 .app-footer {
     text-align: center;
     padding: var(--spacing-md);
-    color: #70757a;
+    color: var(--color-text-secondary);
     font-size: 13px;
     border-top: 1px solid var(--color-border);
-    background-color: #f1f3f4;
+    background-color: var(--color-background); /* Белый фон */
 }
 
-/* Контейнер для всплывающих уведомлений (тостов) */
+/* Уведомления (Toast) */
 .toast-container {
-    position: fixed; /* Фиксированное позиционирование */
+    position: fixed;
     bottom: var(--spacing-lg);
     right: var(--spacing-lg);
-    z-index: 1100; /* Выше других элементов */
+    z-index: 1100;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    max-width: 90%;
 }
 
-/* Стиль отдельного всплывающего уведомления (тоста) */
 .toast {
-    background-color: #323232;
+    background-color: #323232; /* Темный фон для лучшей видимости */
     color: #ffffff;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    opacity: 0; /* Изначально скрыт */
-    transform: translateY(20px); /* Изначально смещен вниз */
-    transition: all 0.3s ease; /* Плавное появление */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     min-width: 250px;
+    word-break: break-word;
 }
 
-/* Стиль для показанного тоста */
 .toast.show {
     opacity: 1;
     transform: translateY(0);
 }
 
-/* Цвета для тостов с разными статусами */
 .toast.success {
     background-color: var(--color-success);
 }
@@ -886,60 +870,56 @@ pre.error-pre {
     color: white;
 }
 
-/*
- * Медиа-запросы для адаптивного дизайна.
- * Изменяют макет и размеры элементов на разных размерах экрана.
- */
-
-/* Для экранов шириной до 1200px */
+/* Медиа-запросы для адаптивности */
 @media (max-width: 1200px) {
     .left-panel {
-        flex: 0 0 450px; /* Уменьшаем ширину левой панели */
+        flex: 0 0 550px; /* Уменьшил ширину левой панели для более компактных экранов */
     }
 }
 
-/* Для экранов шириной до 992px (планшеты) */
+/* Медиа-запросы для адаптивности */
 @media (max-width: 992px) {
-    .app-main {
-        flex-direction: column; /* Изменяем направление на вертикальное */
-        padding: var(--spacing-sm);
-        gap: var(--spacing-sm);
+    /* На мобильных возвращаем исходные стили для detail-block,
+       чтобы избежать чрезмерных серых полос */
+    .detail-block {
+        padding-top: var(--spacing-md);
+        margin-left: 0;
+        margin-right: 0;
+        background-color: var(--color-background); /* Возвращаем белый фон на мобильных */
     }
-    .container-fluid {
-        flex-direction: column;
-        height: auto;
-        min-height: 70vh; /* Минимальная высота для контейнера */
+
+    .right-panel .detail-block:first-of-type {
+        padding-top: 0;
+        margin-top: 0;
     }
-    .left-panel {
-        flex: 0 0 auto; /* Автоматическая высота */
-        border-right: none;
-        border-bottom: 1px solid var(--color-border); /* Добавляем нижнюю границу */
-        height: 50vh; /* Фиксированная высота для левой панели */
+
+    .detail-block:last-child {
+        padding-bottom: var(--spacing-lg); /* Возвращаем стандартный нижний отступ */
     }
-    .right-panel {
-        flex: 1;
-        padding: var(--spacing-md);
+
+    .detail-block h3 {
+        position: static;
+        padding: var(--spacing-sm) var(--spacing-md);
+        margin-left: 0;
+        margin-right: 0;
+        border-bottom: 1px solid var(--color-border);
+        box-shadow: var(--shadow-xxs);
+        width: auto;
     }
-    .header-title-text {
-        font-size: 18px;
-    }
-    .header-icon {
-        font-size: 20px;
-    }
-    .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Уменьшаем минимальную ширину карточек */
-    }
-    .graphs-section {
-        height: auto;
-        max-height: 40vh; /* Ограничиваем максимальную высоту для графиков */
+
+    .info-grid,
+    .analysis-result-item,
+    .failure-subsection {
+        border-bottom: none;
+        margin-bottom: var(--spacing-md);
+        padding-bottom: 0;
     }
 }
 
-/* Для экранов шириной до 768px (мобильные устройства) */
 @media (max-width: 768px) {
     .header-content {
-        flex-direction: column; /* Шапка в одну колонку */
-        align-items: flex-start; /* Выравнивание элементов по левому краю */
+        flex-direction: column;
+        align-items: flex-start;
         gap: var(--spacing-sm);
     }
     .header-actions {
@@ -954,12 +934,13 @@ pre.error-pre {
         padding: var(--spacing-sm);
     }
     .stats-card p {
-        font-size: 20px; /* Уменьшаем размер текста в карточках статистики */
+        font-size: 20px;
     }
     .toast-container {
         bottom: var(--spacing-sm);
         right: var(--spacing-sm);
-        left: var(--spacing-sm); /* Тост растягивается на всю ширину */
+        left: var(--spacing-sm);
+        max-width: unset;
     }
     .toast {
         min-width: unset;
@@ -970,6 +951,6 @@ pre.error-pre {
         font-size: 14px;
     }
     .chart-container {
-        height: 200px; /* Уменьшаем высоту графиков */
+        height: 200px;
     }
 }
