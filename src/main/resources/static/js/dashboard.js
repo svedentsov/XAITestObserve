@@ -386,6 +386,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTestDetails(testRun) {
         // Форматируем timestamp с помощью новой функции
         const formattedTimestamp = formatDateTime(testRun.timestamp);
+        const formattedStartTime = testRun.startTime ? formatDateTime(testRun.startTime) : 'N/A';
+        const formattedEndTime = testRun.endTime ? formatDateTime(testRun.endTime) : 'N/A';
+        const durationSeconds = testRun.durationMillis ? (testRun.durationMillis / 1000).toFixed(2) : 'N/A';
+
 
         let contentHtml = `
             <div class="detail-block">
@@ -395,13 +399,90 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p><strong>Статус:</strong> <span class="status-badge status-${testRun.status.toLowerCase()}">${escapeHtml(testRun.status)}</span></p>
                     <p><strong>Класс:</strong> ${escapeHtml(testRun.testClass || 'N/A')}</p>
                     <p><strong>Метод:</strong> ${escapeHtml(testRun.testMethod || 'N/A')}</p>
-                    <p><strong>Время:</strong> <span class="run-info-time">${escapeHtml(formattedTimestamp)}</span></p>
-                    <p><strong>Окружение:</strong> ${escapeHtml(testRun.configuration?.environment || 'N/A')}</p>
-                    <p><strong>Версия:</strong> ${escapeHtml(testRun.configuration?.appVersion || 'N/A')}</p>
-                    <p><strong>Набор:</strong> ${escapeHtml(testRun.configuration?.testSuite || 'N/A')}</p>
+                    <p><strong>Время запуска:</strong> <span class="run-info-time">${escapeHtml(formattedStartTime)}</span></p>
+                    <p><strong>Время завершения:</strong> <span class="run-info-time">${escapeHtml(formattedEndTime)}</span></p>
+                    <p><strong>Длительность:</strong> ${escapeHtml(durationSeconds)} сек</p>
+                    <p><strong>Версия приложения:</strong> ${escapeHtml(testRun.appVersion || 'N/A')}</p>
+                    <p><strong>Тестовый набор:</strong> ${escapeHtml(testRun.testSuite || 'N/A')}</p>
                 </div>
             </div>
         `;
+
+        // Environment Details
+        if (testRun.environmentDetails) {
+            const env = testRun.environmentDetails;
+            contentHtml += `
+                <div class="detail-block">
+                    <h3><i class="fa-solid fa-desktop" aria-hidden="true"></i> Детали окружения</h3>
+                    <div class="info-grid">
+                        <p><strong>Имя:</strong> ${escapeHtml(env.name || 'N/A')}</p>
+                        <p><strong>ОС:</strong> ${escapeHtml(env.osType || 'N/A')} ${escapeHtml(env.osVersion || 'N/A')}</p>
+                        <p><strong>Браузер:</strong> ${escapeHtml(env.browserType || 'N/A')} ${escapeHtml(env.browserVersion || 'N/A')}</p>
+                        <p><strong>Разрешение экрана:</strong> ${escapeHtml(env.screenResolution || 'N/A')}</p>
+                        <p><strong>Тип устройства:</strong> ${escapeHtml(env.deviceType || 'N/A')}</p>
+                        ${env.deviceName ? `<p><strong>Имя устройства:</strong> ${escapeHtml(env.deviceName)}</p>` : ''}
+                        <p><strong>Версия драйвера:</strong> ${escapeHtml(env.driverVersion || 'N/A')}</p>
+                        <p><strong>Базовый URL приложения:</strong> ${env.appBaseUrl ? `<a href="${escapeHtml(env.appBaseUrl)}" target="_blank">${escapeHtml(env.appBaseUrl)}</a>` : 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Test Tags
+        if (testRun.testTags && testRun.testTags.length > 0) {
+            contentHtml += `
+                <div class="detail-block">
+                    <h3><i class="fa-solid fa-tags" aria-hidden="true"></i> Теги</h3>
+                    <div class="tags-container">
+                        ${testRun.testTags.map(tag => `<span class="test-tag">${escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Custom Metadata
+        if (testRun.customMetadata && Object.keys(testRun.customMetadata).length > 0) {
+            contentHtml += `
+                <div class="detail-block">
+                    <h3><i class="fa-solid fa-cogs" aria-hidden="true"></i> Пользовательские метаданные</h3>
+                    <div class="info-grid custom-metadata-grid">
+                        ${Object.entries(testRun.customMetadata).map(([key, value]) => `<p><strong>${escapeHtml(key)}:</strong> ${escapeHtml(value)}</p>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Test Artifacts
+        if (testRun.artifacts) {
+            const artifacts = testRun.artifacts;
+            let artifactLinksHtml = '';
+            if (artifacts.screenshotUrls && artifacts.screenshotUrls.length > 0) {
+                artifactLinksHtml += `<p><strong>Скриншоты:</strong> ${artifacts.screenshotUrls.map(url => `<a href="${escapeHtml(url)}" target="_blank">Скриншот</a>`).join(', ')}</p>`;
+            }
+            if (artifacts.videoUrl) {
+                artifactLinksHtml += `<p><strong>Видео:</strong> <a href="${escapeHtml(artifacts.videoUrl)}" target="_blank">Видеозапись</a></p>`;
+            }
+            if (artifacts.appLogUrls && artifacts.appLogUrls.length > 0) {
+                artifactLinksHtml += `<p><strong>Логи приложения:</strong> ${artifacts.appLogUrls.map(url => `<a href="${escapeHtml(url)}" target="_blank">Лог</a>`).join(', ')}</p>`;
+            }
+            if (artifacts.browserConsoleLogUrl) {
+                artifactLinksHtml += `<p><strong>Лог консоли браузера:</strong> <a href="${escapeHtml(artifacts.browserConsoleLogUrl)}" target="_blank">Лог</a></p>`;
+            }
+            if (artifacts.harFileUrl) {
+                artifactLinksHtml += `<p><strong>HAR файл:</strong> <a href="${escapeHtml(artifacts.harFileUrl)}" target="_blank">HAR</a></p>`;
+            }
+
+            if (artifactLinksHtml) {
+                contentHtml += `
+                    <div class="detail-block">
+                        <h3><i class="fa-solid fa-box-open" aria-hidden="true"></i> Артефакты</h3>
+                        <div class="artifact-links">
+                            ${artifactLinksHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        }
 
         if (testRun.analysisResults && testRun.analysisResults.length > 0) {
             contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-brain" aria-hidden="true"></i> Результаты Анализа AI</h3>`;
@@ -432,31 +513,56 @@ document.addEventListener('DOMContentLoaded', () => {
         if (testRun.status === 'FAILED') {
             contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-bug" aria-hidden="true"></i> Детали сбоя</h3>`;
             if (testRun.failedStep) {
+                const failedStepDuration = testRun.failedStep.stepDurationMillis ? `${(testRun.failedStep.stepDurationMillis / 1000).toFixed(2)} сек` : 'N/A';
                 contentHtml += `
                     <div class="failure-subsection">
                         <h4>Проваленный шаг</h4>
+                        <p><strong>Номер шага:</strong> ${escapeHtml(testRun.failedStep.stepNumber || 'N/A')}</p>
                         <p><strong>Действие:</strong> ${escapeHtml(testRun.failedStep.action || 'N/A')}</p>
                         <p><strong>Локатор:</strong> ${escapeHtml(testRun.failedStep.locatorStrategy || 'N/A')} = ${escapeHtml(testRun.failedStep.locatorValue || 'N/A')}</p>
+                        ${testRun.failedStep.interactedText ? `<p><strong>Взаимодействовали с текстом:</strong> ${escapeHtml(testRun.failedStep.interactedText)}</p>` : ''}
+                        <p><strong>Результат:</strong> <span class="status-badge status-${testRun.failedStep.result ? testRun.failedStep.result.toLowerCase() : 'unknown'}">${escapeHtml(testRun.failedStep.result || 'N/A')}</span></p>
+                        ${testRun.failedStep.confidenceScore !== undefined ? `<p><strong>Уверенность AI:</strong> ${(testRun.failedStep.confidenceScore * 100).toFixed(0)}%</p>` : ''}
+                        ${testRun.failedStep.errorMessage ? `<p><strong>Сообщение об ошибке:</strong> ${escapeHtml(testRun.failedStep.errorMessage)}</p>` : ''}
+                        <p><strong>Длительность шага:</strong> ${escapeHtml(failedStepDuration)}</p>
+                        ${testRun.failedStep.additionalStepData ? `<p><strong>Доп. данные шага:</strong></p><pre class="raw-data-block">${escapeHtml(testRun.failedStep.additionalStepData)}</pre>` : ''}
                     </div>`;
             }
-            if (testRun.exceptionType || testRun.stackTrace) {
-                contentHtml += `<div class="failure-subsection"><h4>Исключение</h4><pre class="error-pre">${escapeHtml(testRun.exceptionType || 'N/A')}\n${escapeHtml(testRun.stackTrace || 'Нет стектрейса')}</pre></div>`;
+            if (testRun.exceptionType || testRun.exceptionMessage || testRun.stackTrace) {
+                contentHtml += `<div class="failure-subsection"><h4>Исключение</h4>`;
+                if (testRun.exceptionType) contentHtml += `<p><strong>Тип исключения:</strong> ${escapeHtml(testRun.exceptionType)}</p>`;
+                if (testRun.exceptionMessage) contentHtml += `<p><strong>Сообщение:</strong> ${escapeHtml(testRun.exceptionMessage)}</p>`;
+                if (testRun.stackTrace) contentHtml += `<p><strong>Стек-трейс:</strong></p><pre class="error-pre">${escapeHtml(testRun.stackTrace)}</pre>`;
+                contentHtml += `</div>`;
             }
             contentHtml += `</div>`;
         }
 
         if (testRun.executionPath && testRun.executionPath.length > 0) {
-            contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Путь выполнения</h3><ul class="execution-path-visualizer">`;
+            contentHtml += `
+                <div class="detail-block">
+                    <h3><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Путь выполнения</h3>
+                    <ul class="execution-path-visualizer">`;
             testRun.executionPath.forEach((step, index) => {
-                // No icons here, just content
                 const statusClass = `step-${step.result ? step.result.toLowerCase() : 'unknown'}`;
                 const confidence = step.confidenceScore !== undefined ? `Уверенность: ${(step.confidenceScore * 100).toFixed(0)}%` : 'Уверенность: N/A';
+                const stepDuration = step.stepDurationMillis ? `Длительность: ${(step.stepDurationMillis / 1000).toFixed(2)} сек` : '';
+                const stepStartTime = step.stepStartTime ? `Начало: ${formatDateTime(new Date(step.stepStartTime))}` : '';
+                const stepEndTime = step.stepEndTime ? `Конец: ${formatDateTime(new Date(step.stepEndTime))}` : '';
 
                 contentHtml += `
                     <li class="${statusClass}">
-                        <div class="step-content">
+                        <div class="step-header">
                             <strong>Шаг ${index + 1}:</strong> ${escapeHtml(step.action || 'Неизвестное действие')}
-                            <small>${confidence}</small>
+                            <span class="step-status status-badge status-${step.result ? step.result.toLowerCase() : 'unknown'}">${escapeHtml(step.result || 'N/A')}</span>
+                        </div>
+                        <div class="step-details">
+                            <p><strong>Локатор:</strong> ${escapeHtml(step.locatorStrategy || 'N/A')} = ${escapeHtml(step.locatorValue || 'N/A')}</p>
+                            ${step.interactedText ? `<p><strong>Взаимодействовали с текстом:</strong> ${escapeHtml(step.interactedText)}</p>` : ''}
+                            <p>${confidence}</p>
+                            ${step.errorMessage ? `<p class="step-error-message"><strong>Ошибка:</strong> ${escapeHtml(step.errorMessage)}</p>` : ''}
+                            <p>${stepStartTime} ${stepEndTime} ${stepDuration}</p>
+                            ${step.additionalStepData ? `<p><strong>Доп. данные:</strong></p><pre class="raw-data-block">${escapeHtml(step.additionalStepData)}</pre>` : ''}
                         </div>
                     </li>`;
             });

@@ -764,22 +764,28 @@ pre.error-pre {
 
 .execution-path-visualizer::before {
     position: absolute;
-    left: 11px;
-    top: 5px;
-    bottom: 5px;
+    left: 11px; /* Выравниваем по центру кружка */
+    top: 22px; /* Начинаем ниже кружка первого элемента */
+    bottom: 0;
     width: 2px;
     background-color: var(--color-border);
+    z-index: 0;
 }
 
 .execution-path-visualizer li {
     position: relative;
     padding: var(--spacing-xs) 0 var(--spacing-xs) var(--spacing-xl);
+    margin-bottom: var(--spacing-sm); /* Отступ между элементами списка */
 }
 
-.step-icon {
+.execution-path-visualizer li:last-child {
+    margin-bottom: 0;
+}
+
+.step-icon { /* Заглушка, если иконки будут в отдельном элементе */
     position: absolute;
     left: 0;
-    top: 8px;
+    top: 8px; /* Выравниваем по верхней части заголовка шага */
     font-size: 20px;
     background-color: var(--color-panel-background);
     padding: 0 2px;
@@ -792,31 +798,103 @@ pre.error-pre {
 .step-failed .step-icon { color: var(--color-failure); }
 .step-skipped .step-icon { color: var(--color-skipped); }
 
-.step-content {
-    background: var(--color-light-grey);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    font-size: 14px;
+.step-header {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
     align-items: center;
     gap: var(--spacing-sm);
-    border: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-xs); /* Отступ между заголовком и деталями шага */
 }
 
-.step-content strong {
-    flex-basis: 100%;
-    font-size: 15px;
+.step-header strong {
+    font-size: 16px;
     font-weight: 500;
     color: var(--color-text-primary);
 }
 
-.step-content small {
+.step-details {
+    background: var(--color-light-grey);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    border: 1px solid var(--color-border);
+}
+
+.step-details p {
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.step-details p:last-child {
+    margin-bottom: 0;
+}
+
+.step-details strong {
     color: var(--color-text-secondary);
-    flex-grow: 1;
-    text-align: right;
+    font-weight: 400;
+    margin-right: 5px;
+}
+
+.step-status {
+    padding: 2px 8px;
+    border-radius: var(--border-radius-pill);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: auto; /* Прижимает статус к правому краю */
+}
+
+/* Цветовая дифференциация для .step-status */
+.step-status.status-passed { background-color: var(--color-success-background); color: var(--color-success); }
+.step-status.status-failed { background-color: var(--color-failure-background); color: var(--color-failure); }
+.step-status.status-skipped { background-color: var(--color-skipped-background); color: var(--color-skipped); }
+
+
+.step-error-message {
+    color: var(--color-failure);
+    font-weight: 500;
+}
+
+/* Стили для тегов */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.test-tag {
+    background-color: var(--color-accent-light);
+    color: var(--color-accent-hover);
+    padding: 4px 10px;
+    border-radius: var(--border-radius-pill);
     font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Стили для пользовательских метаданных */
+.custom-metadata-grid {
+    /* Можно добавить специфичные стили, если потребуется */
+}
+
+/* Стили для артефактов */
+.artifact-links {
+    font-size: 15px;
+}
+
+.artifact-links p {
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.artifact-links p:last-child {
+    margin-bottom: 0;
+}
+
+.artifact-links a {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.artifact-links a:hover {
+    text-decoration: underline;
 }
 
 /* Футер */
@@ -918,7 +996,11 @@ pre.error-pre {
        так как их родительский detail-block уже имеет padding-bottom */
     .info-grid,
     .analysis-result-item,
-    .failure-subsection {
+    .failure-subsection,
+    .execution-path-visualizer,
+    .tags-container,
+    .custom-metadata-grid,
+    .artifact-links {
         /*border-bottom: none; - это свойство не относится к данным элементам
           если эти элементы сами по себе являются последними в detail-block,
           то их margin-bottom должен быть обнулен */
@@ -928,7 +1010,11 @@ pre.error-pre {
 
     .detail-block > :last-child.info-grid,
     .detail-block > :last-child.analysis-result-item,
-    .detail-block > :last-child.failure-subsection {
+    .detail-block > :last-child.failure-subsection,
+    .detail-block > :last-child.execution-path-visualizer,
+    .detail-block > :last-child.tags-container,
+    .detail-block > :last-child.custom-metadata-grid,
+    .detail-block > :last-child.artifact-links {
         margin-bottom: 0;
         padding-bottom: 0;
     }
@@ -974,5 +1060,80 @@ pre.error-pre {
     }
     .chart-container {
         height: 200px;
+    }
+
+    /* На маленьких экранах убираем левую панель и делаем список во всю ширину */
+    .left-panel {
+        flex: 1 1 100%; /* Занимает всю ширину */
+        padding: var(--spacing-sm); /* Меньше отступы */
+    }
+
+    /* Таблица на маленьких экранах */
+    .test-list-wrapper {
+        border-radius: 0; /* Убираем скругление для полного захвата ширины */
+    }
+
+    .test-list-table thead th,
+    .test-list-table tbody td {
+        padding: var(--spacing-xs) var(--spacing-sm); /* Меньше паддинга */
+    }
+
+    /* Правая панель, чтобы она не отображалась, когда активна вкладка "Список запусков" */
+    .right-panel {
+        display: none; /* По умолчанию скрываем правую панель */
+        position: fixed; /* Фиксируем, чтобы она могла перекрывать левую */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000; /* Выше, чем левая панель */
+        background-color: var(--color-background); /* Фон для перекрытия */
+        padding: var(--spacing-md);
+        overflow-y: auto;
+    }
+
+    /* Если активна вкладка "Детали", показываем правую панель */
+    body.show-right-panel .right-panel {
+        display: block;
+    }
+
+    /* Принудительно показываем правый панель, если выбран тест и это мобильный вид */
+    .test-row.selected + .right-panel {
+        display: block; /* Этот селектор может быть сложным, возможно, лучше управлять видимостью через JS-класс на body */
+    }
+
+    /* Управляем видимостью панелей на мобильных через JS-класс на body */
+    body:not(.show-details-on-mobile) .left-panel {
+        display: flex; /* Показываем левую панель */
+    }
+
+    body.show-details-on-mobile .left-panel {
+        display: none; /* Скрываем левую панель, когда показываем детали */
+    }
+
+    body.show-details-on-mobile .right-panel {
+        display: flex; /* Показываем правую панель */
+        flex-direction: column;
+        padding-top: calc(var(--spacing-md) + 40px); /* Отступ для кнопки "Назад" */
+    }
+
+    /* Кнопка "Назад" для мобильных */
+    .back-to-list-button {
+        display: none; /* По умолчанию скрыта */
+        position: fixed;
+        top: var(--spacing-sm);
+        left: var(--spacing-sm);
+        z-index: 1001;
+        background-color: var(--color-accent);
+        color: white;
+        border: none;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--border-radius-md);
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    body.show-details-on-mobile .back-to-list-button {
+        display: block; /* Показываем, когда открыты детали */
     }
 }
