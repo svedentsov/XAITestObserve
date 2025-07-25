@@ -3,6 +3,7 @@ package com.svedentsov.xaiobserverapp.service.impl;
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
 import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
  * Должен быть вызван последним в цепочке, если более специфичные анализаторы не сработали.
  */
 @Component
+@Order(100)
 public class GenericExceptionAnalyzer implements FailureAnalyzer {
 
     @Override

@@ -3,8 +3,7 @@ package com.svedentsov.xaiobserverapp.controller;
 import com.svedentsov.xaiobserverapp.model.TestRun;
 import com.svedentsov.xaiobserverapp.service.TestRunService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,10 +15,11 @@ import org.springframework.web.server.ResponseStatusException;
  * MVC-контроллер для отображения страниц пользовательского интерфейса дашборда.
  * Отвечает за рендеринг HTML-страниц, отображающих информацию о тестовых запусках.
  */
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class DashboardController {
-    private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
+
     private final TestRunService testRunService;
 
     /**
@@ -32,7 +32,7 @@ public class DashboardController {
      */
     @GetMapping("/")
     public String getDashboard(Model model) {
-        logger.debug("Запрос на отображение главного дашборда.");
+        log.debug("Запрос на отображение главного дашборда.");
         model.addAttribute("testRuns", testRunService.getAllTestRunsOrderedByTimestampDesc());
         return "dashboard";
     }
@@ -48,10 +48,10 @@ public class DashboardController {
      */
     @GetMapping("/test/{id}")
     public String getTestDetail(@PathVariable String id, Model model) {
-        logger.debug("Запрос деталей тестового запуска с ID: {} для UI.", id);
+        log.debug("Запрос деталей тестового запуска с ID: {} для UI.", id);
         TestRun testRun = testRunService.getTestRunById(id)
                 .orElseThrow(() -> {
-                    logger.warn("Тестовый запуск с ID: {} не найден.", id);
+                    log.warn("Тестовый запуск с ID: {} не найден.", id);
                     return new ResponseStatusException(HttpStatus.NOT_FOUND, "Тестовый запуск не найден");
                 });
         model.addAttribute("testRun", testRun);

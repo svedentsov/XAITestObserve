@@ -4,6 +4,7 @@ import com.svedentsov.xaiobserverapp.dto.StatisticsDTO;
 import com.svedentsov.xaiobserverapp.model.TestRun;
 import com.svedentsov.xaiobserverapp.repository.TestRunRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class StatisticsService {
+
     private final TestRunRepository testRunRepository;
 
     /**
@@ -33,6 +35,7 @@ public class StatisticsService {
      * @return Объект {@link StatisticsDTO}, содержащий всю агрегированную статистику.
      */
     @Transactional(readOnly = true)
+    @Cacheable("statistics") // Кэшируем результат этого метода
     public StatisticsDTO getOverallStatistics() {
         List<TestRun> allRuns = testRunRepository.findAll();
         long total = allRuns.size();

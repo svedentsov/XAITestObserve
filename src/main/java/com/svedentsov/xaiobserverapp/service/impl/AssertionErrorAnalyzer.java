@@ -3,12 +3,14 @@ package com.svedentsov.xaiobserverapp.service.impl;
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
 import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
  * Анализатор для исключения {@code AssertionError}.
  */
 @Component
+@Order(11)
 public class AssertionErrorAnalyzer implements FailureAnalyzer {
 
     @Override

@@ -2,29 +2,17 @@ package com.svedentsov.xaiobserverapp.service;
 
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-/**
- * Сервис для проведения автоматического корневого анализа причин (RCA)
- * сбоев тестовых запусков.
- * Анализирует предоставленные данные о событии сбоя (шаг, исключение)
- * и предлагает потенциальные причины и решения.
- * В текущей реализации использует паттерн "Стратегия" для динамического
- * выбора подходящего анализатора сбоев на основе типа события.
- */
 @Service
 public class RcaService {
 
-    // Автоматическое внедрение всех бинов, реализующих интерфейс FailureAnalyzer
-    private final Set<FailureAnalyzer> failureAnalyzers;
+    private final List<FailureAnalyzer> failureAnalyzers;
 
-    @Autowired
-    public RcaService(Set<FailureAnalyzer> failureAnalyzers) {
+    public RcaService(List<FailureAnalyzer> failureAnalyzers) {
         this.failureAnalyzers = failureAnalyzers;
     }
 
@@ -39,19 +27,19 @@ public class RcaService {
      */
     public List<AnalysisResult> analyzeTestRun(FailureEventDTO event) {
         List<AnalysisResult> results = new ArrayList<>();
-        if ("PASSED".equals(event.getStatus())) {
+        if ("PASSED".equalsIgnoreCase(event.getStatus())) {
             results.add(createSuccessfulRunSummary());
             return results;
         }
-        // Если тест провален, пытаемся найти подходящий анализатор
+
         for (FailureAnalyzer analyzer : failureAnalyzers) {
             if (analyzer.canAnalyze(event)) {
                 results.add(analyzer.analyze(event));
                 break;
             }
         }
-        // Если никаких конкретных причин не найдено, но статус FAILED, создаем общую сводку.
-        if (results.isEmpty() && "FAILED".equals(event.getStatus())) {
+
+        if (results.isEmpty() && "FAILED".equalsIgnoreCase(event.getStatus())) {
             results.add(createGeneralFailureSummary(event));
         }
         return results;
