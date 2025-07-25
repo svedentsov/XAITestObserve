@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tabContents: document.querySelectorAll('.tab-content'),
         initialSuccessAlert: document.querySelector('.initial-alert-message.success'),
         initialErrorAlert: document.querySelector('.initial-alert-message.error'),
-        // Добавляем ссылки на заголовки блоков деталей
         detailBlockHeaders: null // Будет заполнено при загрузке деталей
     };
 
@@ -54,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeTestRowClickListeners();
         loadInitialTestDetails();
         initializeTabSwitching();
+        // В этой функции мы теперь будем форматировать дату прямо из dataset.time
+        formatTestRunTimes();
         console.log('Dashboard initialization complete.');
     }
 
@@ -68,6 +69,35 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast(DOM_ELEMENTS.initialErrorAlert.textContent.trim(), 'error');
         }
     }
+
+    /**
+     * Formats the 'Время Запуска' column header and its corresponding date cells.
+     */
+    function formatTestRunTimes() {
+        // Find the 'Время Запуска' column header and rename it
+        let runTimeHeader = null;
+        const headers = document.querySelectorAll('.test-list-table thead th');
+        headers.forEach(th => {
+            // Check for both current and original text to be safe
+            if (th.textContent.trim() === 'Время Запуска' || th.textContent.trim() === 'Время запуска') {
+                runTimeHeader = th;
+                th.textContent = 'Время запуска'; // Standardize the header text
+            }
+        });
+
+        // Format the time in each row based on the data-timestamp attribute
+        DOM_ELEMENTS.testRows.forEach(row => {
+            // Find the <td> that contains the timestamp. Assuming it's the last <td>
+            const timeCell = row.querySelector('td:last-child');
+            if (timeCell && timeCell.dataset.timestamp) { // Check if data-timestamp exists
+                const originalTimestamp = timeCell.dataset.timestamp; // Get the raw timestamp
+                timeCell.textContent = formatDateTime(originalTimestamp); // Format and update display
+            }
+        });
+
+        console.log('Test run times formatted and column header updated.');
+    }
+
 
     /**
      * Fetches and renders statistics and charts.
@@ -354,7 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {object} testRun - The test run data.
      */
     function renderTestDetails(testRun) {
-        const formattedTimestamp = new Date(testRun.timestamp).toLocaleString('ru-RU');
+        // Форматируем timestamp с помощью новой функции
+        const formattedTimestamp = formatDateTime(testRun.timestamp);
 
         let contentHtml = `
             <div class="detail-block">
@@ -364,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p><strong>Статус:</strong> <span class="status-badge status-${testRun.status.toLowerCase()}">${escapeHtml(testRun.status)}</span></p>
                     <p><strong>Класс:</strong> ${escapeHtml(testRun.testClass || 'N/A')}</p>
                     <p><strong>Метод:</strong> ${escapeHtml(testRun.testMethod || 'N/A')}</p>
-                    <p><strong>Время:</strong> ${escapeHtml(formattedTimestamp)}</p>
+                    <p><strong>Время:</strong> <span class="run-info-time">${escapeHtml(formattedTimestamp)}</span></p>
                     <p><strong>Окружение:</strong> ${escapeHtml(testRun.configuration?.environment || 'N/A')}</p>
                     <p><strong>Версия:</strong> ${escapeHtml(testRun.configuration?.appVersion || 'N/A')}</p>
                     <p><strong>Набор:</strong> ${escapeHtml(testRun.configuration?.testSuite || 'N/A')}</p>
@@ -389,9 +420,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 contentHtml += `
                     <div class="analysis-result-item">
                         <h4>${escapeHtml(result.analysisType)} <span class="ai-confidence">${confidence}</span></h4>
-                        <p><strong><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> Причина:</strong> ${escapeHtml(result.suggestedReason || 'N/A')}</p>
-                        <p><strong><i class="fa-solid fa-wrench" aria-hidden="true"></i> Решение:</strong> ${escapeHtml(result.solution || 'N/A')}</p>
-                        ${result.rawData ? `<details><summary>Сопутствующие данные</summary><pre>${escapeHtml(result.rawData)}</pre></details>` : ''}
+                        <p><strong>Причина:</strong> ${escapeHtml(result.suggestedReason || 'N/A')}</p>
+                        <p><strong>Решение:</strong> ${escapeHtml(result.solution || 'N/A')}</p>
+                        ${result.rawData ? `<p><strong>Сопутствующие данные:</strong></p><pre class="raw-data-block">${escapeHtml(result.rawData)}</pre>` : ''}
                         ${feedbackHtml}
                     </div>`;
             });
@@ -417,13 +448,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (testRun.executionPath && testRun.executionPath.length > 0) {
             contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Путь выполнения</h3><ul class="execution-path-visualizer">`;
             testRun.executionPath.forEach((step, index) => {
-                const iconClass = step.result === 'SUCCESS' ? 'fa-circle-check' : (step.result === 'FAILURE' ? 'fa-circle-xmark' : 'fa-circle-minus');
+                // No icons here, just content
                 const statusClass = `step-${step.result ? step.result.toLowerCase() : 'unknown'}`;
                 const confidence = step.confidenceScore !== undefined ? `Уверенность: ${(step.confidenceScore * 100).toFixed(0)}%` : 'Уверенность: N/A';
 
                 contentHtml += `
                     <li class="${statusClass}">
-                        <i class="fa-solid ${iconClass} step-icon" aria-hidden="true"></i>
                         <div class="step-content">
                             <strong>Шаг ${index + 1}:</strong> ${escapeHtml(step.action || 'Неизвестное действие')}
                             <small>${confidence}</small>
@@ -488,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function submitFeedback(analysisId, isCorrect, buttonContainer) {
         try {
-            const response = await fetch(API_ENDpoints.feedback(analysisId), {
+            const response = await fetch(API_ENDPOINTS.feedback(analysisId), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -635,6 +665,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.appendChild(document.createTextNode(unsafe));
         return div.innerHTML;
+    }
+
+    /**
+     * Formats a date string into "dd.mm.yyyy hh:mm:ss" format.
+     * @param {string} dateString The date string to format (e.g., ISO 8601).
+     * @returns {string} The formatted date string.
+     */
+    function formatDateTime(dateString) {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return dateString; // Return original string if invalid date
+        }
+
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
     }
 
     // --- Start the dashboard ---

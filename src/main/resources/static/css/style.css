@@ -39,7 +39,7 @@
     --shadow-xs: 0 0.5px 1px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05); /* Очень слабая тень */
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08);
     --shadow-md: 0 2px 4px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.08);
-    --shadow-lg: 0 4px 8px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1); /* Более выраженная тень для хедера */
+    --shadow-lg: 0 4.25px 8.5px rgba(0,0,0,0.08), 0 8.5px 17px rgba(0,0,0,0.08); /* Изменено на более выраженную тень для хедера */
     --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -55,6 +55,7 @@ html, body {
 }
 
 body {
+    /* Исправлен URL для Roboto Mono, добавлен Segoe UI как дефолтный шрифт Windows 11 */
     font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
     background-color: var(--color-background);
     color: var(--color-text-primary);
@@ -73,9 +74,6 @@ body {
 .app-main {
     flex: 1;
     display: flex;
-    /* Убираем padding отсюда, чтобы контейнер мог прижаться к краям */
-    /* padding: var(--spacing-md); */
-    /* gap: var(--spacing-md); */ /* Gap тоже убираем, так как панели теперь будут внутри контейнера */
     min-height: 0;
 }
 
@@ -83,11 +81,8 @@ body {
     width: 100%;
     height: 100%;
     background: var(--color-panel-background);
-    /* border-radius: var(--border-radius-lg); */ /* Убираем border-radius, так как панель будет прижата */
     display: flex;
     overflow: hidden;
-    /* Убираем общую тень для контейнера, тени теперь будут на панелях */
-    /* box-shadow: var(--shadow-sm); */
 }
 
 /* Панели */
@@ -97,11 +92,9 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Убрали тень справа для визуального разделения */
-    box-shadow: none; /* Убрали box-shadow */
-    position: relative; /* Для правильной работы z-index, если потребуется */
+    box-shadow: none;
+    position: relative;
     z-index: 1;
-    /* Добавляем padding для содержимого левой панели */
     padding: var(--spacing-md);
 }
 
@@ -110,28 +103,22 @@ body {
     overflow-y: auto;
     padding: var(--spacing-md);
     z-index: 0;
-    background-color: var(--color-panel-background); /* Остается белым */
-    position: relative; /* Необходимо для позиционирования псевдоэлемента */
+    background-color: var(--color-light-grey); /* Изменено на серый фон для отступов */
+    position: relative;
 }
 
+/* Этот псевдоэлемент больше не нужен, так как сам right-panel будет иметь серый фон */
 .right-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--spacing-md); /* Высота равна верхнему паддингу */
-    background-color: var(--color-light-grey); /* Светло-серый цвет */
-    z-index: -1; /* Чтобы был под содержимым */
+    display: none;
 }
 
 /* Заголовок приложения */
 .app-header {
     background-color: var(--color-panel-background);
     padding: var(--spacing-sm) var(--spacing-lg);
-    box-shadow: var(--shadow-xxs); /* Используем ещё более слабую тень */
+    box-shadow: var(--shadow-xxs);
     z-index: 100;
-    border-bottom: 1px solid var(--color-border); /* Дополнительная граница */
+    border-bottom: 1px solid var(--color-border);
 }
 
 .header-content {
@@ -147,7 +134,7 @@ body {
 }
 
 .header-title-text {
-    font-size: 20px; /* Чуть уменьшил */
+    font-size: 20px;
     font-weight: 500;
     margin: 0;
     color: var(--color-text-primary);
@@ -169,7 +156,7 @@ body {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    font-size: 14px; /* Единый размер для кнопок */
+    font-size: 14px;
     text-decoration: none;
 }
 
@@ -180,7 +167,7 @@ body {
 
 .btn:active {
     transform: translateY(0);
-    box-shadow: var(--shadow-inset); /* Небольшая внутренняя тень при нажатии */
+    box-shadow: var(--shadow-inset);
 }
 
 .btn-primary {
@@ -203,19 +190,18 @@ body {
 .tab-buttons {
     display: flex;
     border-bottom: 1px solid var(--color-border);
-    background-color: var(--color-panel-background); /* Фон кнопок вкладок теперь белый */
+    background-color: var(--color-panel-background);
     flex-shrink: 0;
-    /* padding: 0 var(--spacing-md); */ /* Убираем padding, чтобы кнопки прижимались к краям левой панели */
 }
 
 .tab-button {
     background-color: transparent;
     border: none;
-    padding: var(--spacing-md) var(--spacing-lg); /* 16px сверху/снизу, 24px слева/справа */
+    padding: var(--spacing-md) var(--spacing-lg);
     cursor: pointer;
-    font-size: 15px; /* Единый размер */
+    font-size: 15px;
     font-weight: 500;
-    color: var(--color-text-secondary); /* Второстепенный цвет текста */
+    color: var(--color-text-secondary);
     border-bottom: 2px solid transparent;
     transition: all 0.2s ease;
     outline: none;
@@ -252,9 +238,10 @@ body {
 /* Секция статистики */
 .stats-section {
     padding: var(--spacing-md);
-    background-color: var(--color-light-grey); /* Фон секции статистики теперь серый */
+    background-color: var(--color-light-grey);
     flex-shrink: 0;
     min-height: fit-content;
+    margin-bottom: var(--spacing-md); /* Добавлен отступ снизу */
 }
 
 .loading-message {
@@ -272,60 +259,57 @@ body {
 
 .stats-card {
     background-color: var(--color-panel-background);
-    padding: var(--spacing-sm); /* Уменьшил padding для уменьшения высоты */
+    padding: var(--spacing-sm);
     border-radius: var(--border-radius-md);
     text-align: center;
-    border: 1px solid var(--color-border); /* Легкая граница вместо сильной тени */
-    /* Удалена тень для карточки статистики */
+    border: 1px solid var(--color-border);
 }
 
 .stats-card h4 {
-    margin: 0 0 var(--spacing-xs) 0; /* Уменьшил нижний отступ */
-    font-size: 13px; /* Мелкий текст */
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 13px;
     color: var(--color-text-secondary);
-    font-weight: 400; /* Обычное начертание */
-    white-space: nowrap; /* Запрещаем перенос строк для заголовков карточек */
-    overflow: hidden; /* Скрываем излишки текста */
-    text-overflow: ellipsis; /* Добавляем многоточие, если текст не помещается */
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .stats-card p {
     margin: 0;
-    font-size: 20px; /* Чуть уменьшил для компактности */
-    font-weight: 500; /* Среднее начертание */
+    font-size: 20px;
+    font-weight: 500;
     color: var(--color-text-primary);
 }
 
 .stats-card.status-passed p { color: var(--color-success); }
 .stats-card.status-failed p { color: var(--color-failure); }
+.stats-card.status-skipped p { color: var(--color-skipped); }
 
-/* Изменения для .failing-tests-card - теперь это div */
 .failing-tests-card {
     background-color: var(--color-panel-background);
     border-radius: var(--border-radius-md);
-    border: 1px solid var(--color-border); /* Легкая граница */
-    margin-bottom: var(--spacing-md);
-    padding: var(--spacing-md); /* Добавил padding сюда, так как нет summary */
-    /* Удалена тень для failing-tests-card */
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-md); /* Стандартизированный отступ снизу */
+    padding: var(--spacing-md);
 }
 
-/* Новый стиль для заголовка внутри .failing-tests-card */
 .failing-tests-card h4 {
-    margin: 0 0 var(--spacing-md) 0; /* Отступ снизу для заголовка */
-    font-size: 14px; /* Немного уменьшил */
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 14px;
     font-weight: 500;
     color: var(--color-text-primary);
 }
 
 .failing-tests-card .content {
-    padding: 0; /* Убрал padding, т.к. он теперь на .failing-tests-card */
+    padding: 0;
 }
 
 .failing-tests-card ul {
     list-style: none;
     padding: 0;
     margin: 0;
-    font-size: 14px; /* Единый размер */
+    font-size: 14px;
 }
 
 .failing-tests-card li {
@@ -352,31 +336,40 @@ body {
 /* Секция графиков */
 .graphs-section {
     padding: var(--spacing-md);
-    background-color: var(--color-background); /* Белый фон */
+    background-color: var(--color-light-grey);
     flex-shrink: 0;
     overflow-y: auto;
-    padding-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-md); /* Установлено одинаковое расстояние */
+
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-md); /* Отступы между плитками внутри graphs-section */
 }
 
-.graphs-section h3 {
-    margin: var(--spacing-lg) 0 var(--spacing-md) 0;
-    font-size: 16px; /* Один размер для подзаголовков */
+/* Стили для карточек графиков (плиток) */
+.graphs-card {
+    background-color: var(--color-panel-background);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-md);
+    box-shadow: none;
+    /* margin-bottom: var(--spacing-md); */ /* Удален, так как родительский graphs-section управляет отступами через gap */
+}
+
+.graphs-card h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--color-text-primary);
-    font-weight: 500; /* Среднее начертание */
-}
-
-.graphs-section h3:first-child {
-    margin-top: 0;
 }
 
 .chart-container {
     background-color: var(--color-panel-background);
-    padding: var(--spacing-md);
+    padding: 0;
     border-radius: var(--border-radius-md);
-    border: 1px solid var(--color-border); /* Легкая граница */
-    /* Удалена тень для chart-container */
+    border: none;
     height: 250px;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-md); /* Установлено одинаковое расстояние */
     position: relative;
 }
 
@@ -389,8 +382,11 @@ body {
 .test-list-wrapper {
     flex: 1;
     overflow-y: auto;
-    /* padding: 0 var(--spacing-md); */ /* Убираем padding, так как он уже задан на .left-panel */
-    padding-top: var(--spacing-md); /* Добавляем padding-top для контента после табов */
+    padding-top: 0;
+    /* Добавляем обводку и скругление */
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-panel-background); /* Фон для обводки */
 }
 
 .test-list-table {
@@ -401,17 +397,21 @@ body {
 .test-list-table thead th {
     position: sticky;
     top: 0;
-    background-color: var(--color-light-grey); /* Применил новый серый цвет */
-    padding: var(--spacing-xs) var(--spacing-md); /* Уменьшил padding для заголовков */
+    background-color: var(--color-panel-background);
+    padding: var(--spacing-xs) var(--spacing-md);
     text-align: left;
     font-weight: 500;
-    font-size: 13px; /* Мелкий шрифт */
+    font-size: 13px;
     color: var(--color-text-secondary);
     z-index: 1;
     border-bottom: 1px solid var(--color-border);
-    white-space: nowrap; /* Запрещаем перенос строк для заголовков столбцов */
-    overflow: hidden; /* Скрываем излишки текста */
-    text-overflow: ellipsis; /* Добавляем многоточие, если текст не помещается */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.test-list-table tbody {
+    background-color: var(--color-panel-background);
 }
 
 .test-row {
@@ -421,7 +421,7 @@ body {
 }
 
 .test-row:hover {
-    background-color: var(--color-light-grey); /* Применил новый серый цвет */
+    background-color: var(--color-light-grey);
 }
 
 .test-row.selected {
@@ -434,21 +434,21 @@ body {
 }
 
 .test-row td {
-    padding: var(--spacing-xs) var(--spacing-md); /* Уменьшил padding для строк таблицы */
+    padding: var(--spacing-xs) var(--spacing-md);
     vertical-align: middle;
-    font-size: 14px; /* Единый размер */
+    font-size: 14px;
     color: var(--color-text-primary);
 }
 
-.test-row td:first-child { /* Первая ячейка (статус) */
+.test-row td:first-child {
     padding-left: var(--spacing-md);
-    padding-right: var(--spacing-xs); /* Чуть больше отступ слева, меньше справа */
-    width: 30px; /* Фиксированная ширина для иконки статуса */
-    text-align: center; /* Центрируем иконку */
+    padding-right: var(--spacing-xs);
+    width: 30px;
+    text-align: center;
 }
 
 .test-method-cell {
-    font-weight: 400; /* Обычное начертание */
+    font-weight: 400;
 }
 
 .status-indicator {
@@ -468,9 +468,9 @@ body {
     display: inline-block;
     padding: 3px var(--spacing-sm);
     border-radius: var(--border-radius-pill);
-    font-size: 12px; /* Очень мелкий шрифт */
-    font-weight: 400; /* Обычное начертание */
-    background-color: var(--color-light-grey); /* Применил новый серый цвет */
+    font-size: 12px;
+    font-weight: 400;
+    background-color: var(--color-light-grey);
     color: var(--color-text-secondary);
     white-space: nowrap;
 }
@@ -489,17 +489,20 @@ body {
 
 /* Блоки деталей теста */
 .detail-block {
-    margin-bottom: var(--spacing-xl);
-    padding-bottom: 0;
+    margin-bottom: var(--spacing-md); /* Добавляем отступ между блоками */
+    background-color: var(--color-panel-background); /* Белый фон для самих блоков */
+    border-radius: var(--border-radius-md); /* Немного скругляем углы */
+    padding: var(--spacing-md); /* Внутренний отступ */
+    border: 1px solid var(--color-border); /* Легкая граница */
+    box-shadow: var(--shadow-xxs); /* Легкая тень */
 }
 
 .detail-block:last-child {
-    border-bottom: none;
+    margin-bottom: 0; /* Убираем отступ у последнего блока */
 }
 
-/* Убираем верхний отступ для первого detail-block */
 .right-panel .detail-block:first-of-type {
-    padding-top: 0;
+    padding-top: var(--spacing-md); /* Добавляем padding-top для первого блока, чтобы он не прилипал к верху */
 }
 
 .detail-block h3 {
@@ -511,52 +514,56 @@ body {
     gap: var(--spacing-sm);
     color: var(--color-text-primary);
     box-sizing: border-box;
-    padding: var(--spacing-md) var(--spacing-lg);
-    background-color: var(--color-panel-background);
-    /* Добавляем верхнюю границу, как и нижняя */
-    border-top: 1px solid var(--color-border);
-    border-bottom: 1px solid var(--color-border);
-    /* Добавляем тень сверху и снизу */
-    box-shadow: var(--shadow-xxs), 0 -0.25px 0.5px rgba(0,0,0,0.02), 0 -0.5px 1px rgba(0,0,0,0.03);
-    margin-left: calc(-1 * var(--spacing-lg));
-    margin-right: calc(-1 * var(--spacing-lg));
-    width: calc(100% + 2 * var(--spacing-lg));
-    z-index: 99;
-    /* Убрано position: sticky и top: 0 для отключения прилипания */
+    /* Убираем отрицательные маржины и ширину, так как блок теперь имеет свой padding и фон */
+    padding: 0; /* Заголовок внутри блока не требует дополнительного padding */
+    background-color: transparent; /* Заголовок наследует фон родительского блока */
+    border-top: none; /* Убираем границы у заголовка */
+    border-bottom: none; /* Убираем границы у заголовка */
+    box-shadow: none; /* Убираем тени у заголовка */
+    margin-left: 0;
+    margin-right: 0;
+    width: auto;
+    z-index: auto;
+    position: static;
+    top: auto;
+    margin-bottom: var(--spacing-md); /* Отступ между заголовком и содержимым блока */
 }
 
-/* Отступы для контента внутри detail-block */
 .detail-block > *:not(h3):first-of-type {
-    margin-top: var(--spacing-lg); /* Отступ для первого элемента после заголовка */
+    margin-top: 0; /* Убираем лишний margin-top, так как заголовок имеет свой margin-bottom */
 }
 
-/* Результаты анализа AI */
-.analysis-result-item {
-    background: var(--color-panel-background); /* Фон карточки анализа AI остается белым */
-    border: 1px solid var(--color-border);
-    border-left: 4px solid var(--color-accent);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    margin-bottom: var(--spacing-md); /* Оставляем margin-bottom для разделения карточек */
-    box-shadow: none;
-    font-size: 15px;
+/* Стили для списков внутри detail-block */
+.detail-block ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--color-border); /* Обводка для списка */
+    border-radius: var(--border-radius-md); /* Скругление углов */
+    overflow: hidden; /* Скрывает скругленные углы у элементов списка */
 }
 
-/* Убираем нижнюю границу для последнего элемента в detail-block */
-.detail-block > :last-child.info-grid,
-.detail-block > :last-child.analysis-result-item,
-.detail-block > :last-child.failure-subsection {
-    border-bottom: none;
+.detail-block ul li {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.detail-block ul li:last-child {
+    border-bottom: none; /* Убираем нижнюю границу у последнего элемента списка */
+}
+
+/* Дополнительные отступы для элементов внутри detail-block */
+.detail-block > :last-child:not(h3) {
     margin-bottom: 0;
-    padding-bottom: 0;
 }
-
 
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: var(--spacing-sm) var(--spacing-md);
-    font-size: 15px; /* Увеличил шрифт до 15px */
+    font-size: 15px;
+    /* Убедимся, что info-grid не имеет лишнего нижнего отступа внутри блока */
+    margin-bottom: 0;
 }
 
 .info-grid p {
@@ -564,15 +571,15 @@ body {
 }
 
 .info-grid p strong {
-    color: var(--color-text-secondary); /* Второстепенный цвет для подписей */
-    font-weight: 400; /* Обычное начертание */
+    color: var(--color-text-secondary);
+    font-weight: 400;
     margin-right: 5px;
 }
 
 .status-badge {
     padding: 4px 10px;
     border-radius: var(--border-radius-pill);
-    font-size: 13px; /* Мелкий */
+    font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
 }
@@ -584,13 +591,13 @@ body {
 /* Результаты анализа AI */
 .analysis-result-item {
     background: var(--color-panel-background);
-    border: 1px solid var(--color-border); /* Легкая граница */
+    border: 1px solid var(--color-border);
     border-left: 4px solid var(--color-accent);
     padding: var(--spacing-md);
-    border-radius: var(--border-radius-md); /* Скругление всех углов */
-    margin-bottom: var(--spacing-md); /* Этот margin-bottom будет перекрыт общим стилем выше */
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-md);
     box-shadow: none;
-    font-size: 15px; /* Увеличил шрифт до 15px */
+    font-size: 15px;
 }
 
 .analysis-result-item h4 {
@@ -598,13 +605,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 16px; /* Заголовок анализа */
+    font-size: 16px;
     font-weight: 500;
     color: var(--color-text-primary);
 }
 
 .ai-confidence {
-    font-size: 13px; /* Мелкий */
+    font-size: 13px;
     padding: 3px var(--spacing-sm);
     border-radius: var(--border-radius-pill);
     background: var(--color-accent-light);
@@ -614,12 +621,12 @@ body {
 
 .analysis-result-item p {
     margin: 0 0 var(--spacing-sm) 0;
-    font-size: 15px; /* Увеличил шрифт до 15px */
+    font-size: 15px;
     color: var(--color-text-primary);
 }
 
 .analysis-result-item p strong {
-    font-weight: 500; /* Более явные подписи */
+    font-weight: 500;
 }
 
 .analysis-result-item p i {
@@ -628,7 +635,7 @@ body {
 }
 
 .analysis-result-item details {
-    font-size: 15px; /* Увеличил шрифт до 15px */
+    font-size: 15px;
     margin-top: var(--spacing-sm);
 }
 
@@ -649,7 +656,7 @@ body {
 }
 
 pre {
-    background-color: var(--color-light-grey); /* Применил новый серый цвет */
+    background-color: var(--color-light-grey);
     border: 1px solid var(--color-border);
     padding: var(--spacing-md);
     border-radius: var(--border-radius-md);
@@ -657,29 +664,29 @@ pre {
     white-space: pre-wrap;
     word-wrap: break-word;
     font-family: 'Roboto Mono', 'Consolas', 'Courier New', monospace;
-    font-size: 13px; /* Мелкий */
+    font-size: 13px;
     color: var(--color-text-primary);
 }
 
 pre.error-pre {
-    background-color: var(--color-failure-background); /* Сохранил для ошибок */
+    background-color: var(--color-failure-background);
     border-color: var(--color-failure);
     color: var(--color-failure);
 }
 
 .failure-subsection {
-    margin-top: var(--spacing-md); /* Отступ от предыдущего элемента */
-    margin-bottom: var(--spacing-md); /* Этот margin-bottom будет перекрыт общим стилем выше */
-    font-size: 15px; /* Увеличил шрифт до 15px */
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    font-size: 15px;
 }
 
 .failure-subsection:first-of-type {
-    margin-top: var(--spacing-md); /* Для первой секции сбоя */
+    margin-top: var(--spacing-md);
 }
 
 .failure-subsection h4 {
     margin: 0 0 var(--spacing-sm) 0;
-    font-size: 15px; /* Заголовки секций */
+    font-size: 15px;
     font-weight: 500;
     color: var(--color-text-primary);
 }
@@ -688,7 +695,7 @@ pre.error-pre {
 .feedback-section {
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-sm);
-    border-top: 1px dashed var(--color-border); /* Более светлая пунктирная линия */
+    border-top: 1px dashed var(--color-border);
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
@@ -702,7 +709,7 @@ pre.error-pre {
 }
 
 .feedback-btn {
-    background: var(--color-light-grey); /* Применил новый серый цвет */
+    background: var(--color-light-grey);
     border: 1px solid var(--color-border);
     border-radius: 50%;
     width: 32px;
@@ -719,7 +726,7 @@ pre.error-pre {
 
 .feedback-btn:hover {
     transform: scale(1.1);
-    border-color: var(--color-accent); /* Акцентная рамка при наведении */
+    border-color: var(--color-accent);
     color: var(--color-accent);
 }
 
@@ -752,17 +759,16 @@ pre.error-pre {
     padding: 0;
     margin: 0;
     position: relative;
-    margin-top: var(--spacing-md); /* Отступ от заголовка */
+    margin-top: var(--spacing-md);
 }
 
 .execution-path-visualizer::before {
-    content: '';
     position: absolute;
     left: 11px;
     top: 5px;
     bottom: 5px;
     width: 2px;
-    background-color: var(--color-border); /* Светлая линия */
+    background-color: var(--color-border);
 }
 
 .execution-path-visualizer li {
@@ -775,7 +781,7 @@ pre.error-pre {
     left: 0;
     top: 8px;
     font-size: 20px;
-    background-color: var(--color-panel-background); /* Белый фон для иконки */
+    background-color: var(--color-panel-background);
     padding: 0 2px;
     border-radius: 50%;
     color: var(--color-text-secondary);
@@ -787,7 +793,7 @@ pre.error-pre {
 .step-skipped .step-icon { color: var(--color-skipped); }
 
 .step-content {
-    background: var(--color-light-grey); /* Применил новый серый цвет */
+    background: var(--color-light-grey);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     font-size: 14px;
@@ -796,12 +802,12 @@ pre.error-pre {
     justify-content: space-between;
     align-items: center;
     gap: var(--spacing-sm);
-    border: 1px solid var(--color-border); /* Легкая граница */
+    border: 1px solid var(--color-border);
 }
 
 .step-content strong {
     flex-basis: 100%;
-    font-size: 15px; /* Чуть крупнее */
+    font-size: 15px;
     font-weight: 500;
     color: var(--color-text-primary);
 }
@@ -810,7 +816,7 @@ pre.error-pre {
     color: var(--color-text-secondary);
     flex-grow: 1;
     text-align: right;
-    font-size: 13px; /* Мелкий */
+    font-size: 13px;
 }
 
 /* Футер */
@@ -820,7 +826,7 @@ pre.error-pre {
     color: var(--color-text-secondary);
     font-size: 13px;
     border-top: 1px solid var(--color-border);
-    background-color: var(--color-background); /* Белый фон */
+    background-color: var(--color-background);
 }
 
 /* Уведомления (Toast) */
@@ -836,7 +842,7 @@ pre.error-pre {
 }
 
 .toast {
-    background-color: #323232; /* Темный фон для лучшей видимости */
+    background-color: #323232;
     color: #ffffff;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
@@ -873,45 +879,57 @@ pre.error-pre {
 /* Медиа-запросы для адаптивности */
 @media (max-width: 1200px) {
     .left-panel {
-        flex: 0 0 550px; /* Уменьшил ширину левой панели для более компактных экранов */
+        flex: 0 0 550px;
     }
 }
 
-/* Медиа-запросы для адаптивности */
 @media (max-width: 992px) {
-    /* На мобильных возвращаем исходные стили для detail-block,
-       чтобы избежать чрезмерных серых полос */
+    /* На мобильных устройствах, чтобы сохранить отступы, detail-block будет иметь паддинг, а right-panel останется серым */
     .detail-block {
-        padding-top: var(--spacing-md);
+        padding: var(--spacing-md); /* Установлен единый padding */
         margin-left: 0;
         margin-right: 0;
-        background-color: var(--color-background); /* Возвращаем белый фон на мобильных */
+        background-color: var(--color-panel-background);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-xxs);
     }
 
     .right-panel .detail-block:first-of-type {
-        padding-top: 0;
+        padding-top: var(--spacing-md);
         margin-top: 0;
     }
 
     .detail-block:last-child {
-        padding-bottom: var(--spacing-lg); /* Возвращаем стандартный нижний отступ */
+        padding-bottom: var(--spacing-md); /* Изменено на md, чтобы было consistent */
     }
 
     .detail-block h3 {
         position: static;
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: 0; /* Убираем padding у h3, так как он уже есть у родителя */
         margin-left: 0;
         margin-right: 0;
-        border-bottom: 1px solid var(--color-border);
-        box-shadow: var(--shadow-xxs);
+        border-bottom: none; /* Убираем границу у заголовка */
+        box-shadow: none; /* Убираем тени у заголовка */
         width: auto;
+        margin-bottom: var(--spacing-md); /* Отступ между заголовком и содержимым блока */
     }
 
+    /* Убираем избыточный padding-bottom у этих элементов,
+       так как их родительский detail-block уже имеет padding-bottom */
     .info-grid,
     .analysis-result-item,
     .failure-subsection {
-        border-bottom: none;
-        margin-bottom: var(--spacing-md);
+        /*border-bottom: none; - это свойство не относится к данным элементам
+          если эти элементы сами по себе являются последними в detail-block,
+          то их margin-bottom должен быть обнулен */
+        margin-bottom: 0; /* Убираем нижний отступ, если это последний элемент */
+        padding-bottom: 0; /* Убираем нижний внутренний отступ */
+    }
+
+    .detail-block > :last-child.info-grid,
+    .detail-block > :last-child.analysis-result-item,
+    .detail-block > :last-child.failure-subsection {
+        margin-bottom: 0;
         padding-bottom: 0;
     }
 }
@@ -930,8 +948,9 @@ pre.error-pre {
         width: auto;
         justify-content: center;
     }
+    /* Убрал padding у app-main, так как right-panel имеет свой padding */
     .app-main {
-        padding: var(--spacing-sm);
+        padding: 0;
     }
     .stats-card p {
         font-size: 20px;
@@ -949,6 +968,9 @@ pre.error-pre {
         justify-content: center;
         padding: var(--spacing-sm);
         font-size: 14px;
+    }
+    .graphs-section { /* На мобильных устройствах графики будут в одну колонку */
+        grid-template-columns: 1fr;
     }
     .chart-container {
         height: 200px;
