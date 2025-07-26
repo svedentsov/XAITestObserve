@@ -6,13 +6,9 @@ import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-/**
- * Анализатор для исключения {@code StaleElementReferenceException}.
- */
 @Component
 @Order(10)
 public class StaleElementReferenceExceptionAnalyzer implements FailureAnalyzer {
-
     @Override
     public boolean canAnalyze(FailureEventDTO event) {
         return event.getExceptionType() != null && event.getExceptionType().contains("StaleElementReferenceException");

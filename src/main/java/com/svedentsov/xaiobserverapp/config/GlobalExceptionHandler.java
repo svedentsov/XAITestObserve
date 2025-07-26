@@ -1,4 +1,3 @@
-
 package com.svedentsov.xaiobserverapp.config;
 
 import com.svedentsov.xaiobserverapp.exception.ResourceNotFoundException;
@@ -14,7 +13,6 @@ import java.util.Map;
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
-
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         log.warn("Resource not found: {}", ex.getMessage());

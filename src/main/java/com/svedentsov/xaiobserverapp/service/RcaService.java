@@ -9,47 +9,30 @@ import java.util.List;
 
 @Service
 public class RcaService {
-
     private final List<FailureAnalyzer> failureAnalyzers;
 
     public RcaService(List<FailureAnalyzer> failureAnalyzers) {
         this.failureAnalyzers = failureAnalyzers;
     }
 
-    /**
-     * Выполняет анализ тестового запуска и генерирует список {@link AnalysisResult}.
-     * Если тест пройден, создается сводка успешного запуска.
-     * Если тест провален, итерирует по зарегистрированным {@link FailureAnalyzer}
-     * для определения возможных причин и предложений решений.
-     *
-     * @param event DTO, содержащий информацию о событии завершения теста.
-     * @return Список объектов {@link AnalysisResult}, представляющих результаты анализа.
-     */
     public List<AnalysisResult> analyzeTestRun(FailureEventDTO event) {
         List<AnalysisResult> results = new ArrayList<>();
         if ("PASSED".equalsIgnoreCase(event.getStatus())) {
             results.add(createSuccessfulRunSummary());
             return results;
         }
-
         for (FailureAnalyzer analyzer : failureAnalyzers) {
             if (analyzer.canAnalyze(event)) {
                 results.add(analyzer.analyze(event));
                 break;
             }
         }
-
         if (results.isEmpty() && "FAILED".equalsIgnoreCase(event.getStatus())) {
             results.add(createGeneralFailureSummary(event));
         }
         return results;
     }
 
-    /**
-     * Создает сводный результат анализа для успешно пройденного тестового запуска.
-     *
-     * @return Объект {@link AnalysisResult} с информацией об успешном завершении.
-     */
     private AnalysisResult createSuccessfulRunSummary() {
         AnalysisResult ar = new AnalysisResult();
         ar.setAnalysisType("Резюме успешного запуска");
@@ -60,13 +43,6 @@ public class RcaService {
         return ar;
     }
 
-    /**
-     * Создает общий сводный результат анализа для проваленного тестового запуска,
-     * когда более специфичные причины не могут быть определены.
-     *
-     * @param event DTO, содержащий информацию о событии сбоя.
-     * @return Объект {@link AnalysisResult} с общим анализом сбоя.
-     */
     private AnalysisResult createGeneralFailureSummary(FailureEventDTO event) {
         AnalysisResult ar = new AnalysisResult();
         ar.setAnalysisType("Общий анализ сбоя");

@@ -15,7 +15,6 @@ import org.springframework.util.StringUtils;
 @Service
 @RequiredArgsConstructor
 public class TestConfigurationService {
-
     private final TestConfigurationRepository testConfigurationRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -29,8 +28,6 @@ public class TestConfigurationService {
                         TestConfiguration newConfig = createNewConfiguration(event, uniqueName);
                         return testConfigurationRepository.save(newConfig);
                     } catch (DataIntegrityViolationException e) {
-                        // Эта ветка сработает, если другой поток успел создать такую же конфигурацию
-                        // между нашим findByUniqueName и save. Это надежный способ обработки гонки состояний.
                         log.warn("Race condition detected. Another thread already created the configuration. Fetching existing one. UniqueName: {}", uniqueName);
                         return testConfigurationRepository.findByUniqueName(uniqueName)
                                 .orElseThrow(() -> new IllegalStateException("Could not find configuration after race condition: " + uniqueName));
@@ -52,7 +49,6 @@ public class TestConfigurationService {
         String testSuite = StringUtils.hasText(event.getTestSuite()) ? event.getTestSuite() : "default";
         String environmentName = "unknown";
         String environmentDetailsHash = "unknown_env";
-
         if (event.getEnvironmentDetails() != null) {
             environmentName = StringUtils.hasText(event.getEnvironmentDetails().getName()) ? event.getEnvironmentDetails().getName() : "unknown";
             environmentDetailsHash = String.format("%s-%s-%s-%s-%s-%s-%s-%s-%s",

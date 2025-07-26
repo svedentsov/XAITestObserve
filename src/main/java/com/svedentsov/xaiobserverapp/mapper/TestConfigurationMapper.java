@@ -20,12 +20,11 @@ public interface TestConfigurationMapper {
             @Mapping(target = "timestamp", expression = "java(toLocalDateTime(dto.getEndTime()))"),
             @Mapping(target = "status", expression = "java(TestRun.TestStatus.valueOf(dto.getStatus().toUpperCase()))"),
             @Mapping(target = "environment", source = "environmentDetails.name"),
-            // Игнорируем поля, которые будут установлены позже
             @Mapping(target = "analysisResults", ignore = true),
             @Mapping(target = "configuration", ignore = true)
     })
     TestRun toEntity(FailureEventDTO dto);
-    
+
     TestRunDetailDTO toDetailDto(TestRun entity);
 
     default LocalDateTime toLocalDateTime(long epochMilli) {

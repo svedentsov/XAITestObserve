@@ -18,19 +18,15 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class FeedbackService {
-
     private final AnalysisResultRepository analysisResultRepository;
     private final AnalysisFeedbackRepository analysisFeedbackRepository;
 
     @Transactional
     public AnalysisFeedback processFeedback(String analysisId, AnalysisFeedbackDTO feedbackDTO) {
         log.info("Processing feedback for analysis ID {}: isCorrect={}", analysisId, feedbackDTO.getIsAiSuggestionCorrect());
-
         AnalysisResult analysisResult = analysisResultRepository.findById(analysisId)
                 .orElseThrow(() -> new ResourceNotFoundException("Analysis with ID " + analysisId + " not found"));
-
         analysisResult.setUserConfirmedCorrect(feedbackDTO.getIsAiSuggestionCorrect());
-
         AnalysisFeedback feedback = new AnalysisFeedback();
         feedback.setAnalysisResult(analysisResult);
         feedback.setIsAiSuggestionCorrect(feedbackDTO.getIsAiSuggestionCorrect());
@@ -39,7 +35,6 @@ public class FeedbackService {
         feedback.setComments(feedbackDTO.getComments());
         feedback.setUserId(StringUtils.hasText(feedbackDTO.getUserId()) ? feedbackDTO.getUserId() : "anonymous");
         feedback.setFeedbackTimestamp(LocalDateTime.now());
-
         return analysisFeedbackRepository.save(feedback);
     }
 }

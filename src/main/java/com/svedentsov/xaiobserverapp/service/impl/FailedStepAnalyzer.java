@@ -4,16 +4,11 @@ import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
 import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component; // Используем @Component для обнаружения Spring
+import org.springframework.stereotype.Component;
 
-/**
- * Анализатор для сбоев, произошедших на конкретном шаге выполнения теста.
- * Формирует предложенную причину и решение на основе действия, локатора и уверенности AI в этом шаге.
- */
 @Component
 @Order(20)
 public class FailedStepAnalyzer implements FailureAnalyzer {
-
     @Override
     public boolean canAnalyze(FailureEventDTO event) {
         return event.getFailedStep() != null;

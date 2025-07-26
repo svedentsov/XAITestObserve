@@ -6,14 +6,9 @@ import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-/**
- * Универсальный анализатор для необработанных исключений.
- * Должен быть вызван последним в цепочке, если более специфичные анализаторы не сработали.
- */
 @Component
 @Order(100)
 public class GenericExceptionAnalyzer implements FailureAnalyzer {
-
     @Override
     public boolean canAnalyze(FailureEventDTO event) {
         return event.getExceptionType() != null && !event.getExceptionType().isEmpty();

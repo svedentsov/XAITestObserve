@@ -1,49 +1,42 @@
-/* Добавляем Google Fonts для робото моно */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 
 :root {
-    /* Цвета */
-    --color-background: #ffffff; /* Белый фон */
-    --color-panel-background: #ffffff; /* Все панели белые */
-    --color-border: #e8e8e8; /* Очень светлая граница */
-    --color-text-primary: #3c4043; /* Темно-серый для основного текста */
-    --color-text-secondary: #70757a; /* Средне-серый для второстепенного текста */
-    --color-accent: #1a73e8; /* Google Blue */
+    --color-background: #ffffff;
+    --color-panel-background: #ffffff;
+    --color-border: #e8e8e8;
+    --color-text-primary: #3c4043;
+    --color-text-secondary: #70757a;
+    --color-accent: #1a73e8;
     --color-accent-hover: #176cd9;
-    --color-accent-light: #e8f0fe; /* Светлый Google Blue */
-    --color-light-grey: #f9f9f9; /* Еле заметный серый */
+    --color-accent-light: #e8f0fe;
+    --color-light-grey: #f9f9f9;
 
-    /* Цвета статусов - теперь более приглушенные, но узнаваемые */
-    --color-success: #1e8e3e; /* Зеленый */
-    --color-failure: #d93025; /* Красный */
-    --color-skipped: #f29900; /* Оранжевый */
-    --color-success-background: #e6f4ea; /* Очень светлый зеленый */
-    --color-failure-background: #fce8e6; /* Очень светлый красный */
-    --color-skipped-background: #fef7e0; /* Очень светлый оранжевый */
+    --color-success: #1e8e3e;
+    --color-failure: #d93025;
+    --color-skipped: #f29900;
+    --color-success-background: #e6f4ea;
+    --color-failure-background: #fce8e6;
+    --color-skipped-background: #fef7e0;
 
-    /* Отступы и размеры */
     --spacing-xs: 4px;
     --spacing-sm: 8px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
 
-    /* Радиусы скругления */
     --border-radius-sm: 4px;
     --border-radius-md: 8px;
     --border-radius-lg: 12px;
     --border-radius-pill: 9999px;
 
-    /* Тени */
-    --shadow-xxs: 0 0.25px 0.5px rgba(0,0,0,0.02), 0 0.5px 1px rgba(0,0,0,0.03); /* Ещё более слабая тень */
-    --shadow-xs: 0 0.5px 1px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05); /* Очень слабая тень */
+    --shadow-xxs: 0 0.25px 0.5px rgba(0,0,0,0.02), 0 0.5px 1px rgba(0,0,0,0.03);
+    --shadow-xs: 0 0.5px 1px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05);
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08);
     --shadow-md: 0 2px 4px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.08);
-    --shadow-lg: 0 4.25px 8.5px rgba(0,0,0,0.08), 0 8.5px 17px rgba(0,0,0,0.08); /* Изменено на более выраженную тень для хедера */
+    --shadow-lg: 0 4.25px 8.5px rgba(0,0,0,0.08), 0 8.5px 17px rgba(0,0,0,0.08);
     --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Общие стили */
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -55,7 +48,6 @@ html, body {
 }
 
 body {
-    /* Исправлен URL для Roboto Mono, добавлен Segoe UI как дефолтный шрифт Windows 11 */
     font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
     background-color: var(--color-background);
     color: var(--color-text-primary);
@@ -63,10 +55,9 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    font-size: 15px; /* Единый базовый размер шрифта */
+    font-size: 15px;
 }
 
-/* Макет приложения */
 .app-header, .app-footer {
     flex-shrink: 0;
 }
@@ -85,10 +76,9 @@ body {
     overflow: hidden;
 }
 
-/* Панели */
 .left-panel {
-    flex: 0 0 650px; /* Увеличил ширину левой панели для таблицы */
-    background-color: var(--color-light-grey); /* Фон левой панели */
+    flex: 0 0 650px;
+    background-color: var(--color-light-grey);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -103,16 +93,14 @@ body {
     overflow-y: auto;
     padding: var(--spacing-md);
     z-index: 0;
-    background-color: var(--color-light-grey); /* Изменено на серый фон для отступов */
+    background-color: var(--color-light-grey);
     position: relative;
 }
 
-/* Этот псевдоэлемент больше не нужен, так как сам right-panel будет иметь серый фон */
 .right-panel::before {
     display: none;
 }
 
-/* Заголовок приложения */
 .app-header {
     background-color: var(--color-panel-background);
     padding: var(--spacing-sm) var(--spacing-lg);
@@ -145,7 +133,6 @@ body {
     font-size: 22px;
 }
 
-/* Кнопки */
 .btn {
     border: none;
     padding: var(--spacing-sm) var(--spacing-md);
@@ -179,7 +166,6 @@ body {
     background-color: var(--color-accent-hover);
 }
 
-/* Вкладки */
 .tabs {
     display: flex;
     flex-direction: column;
@@ -235,13 +221,12 @@ body {
     flex-direction: column;
 }
 
-/* Секция статистики */
 .stats-section {
     padding: var(--spacing-md);
     background-color: var(--color-light-grey);
     flex-shrink: 0;
     min-height: fit-content;
-    margin-bottom: var(--spacing-md); /* Добавлен отступ снизу */
+    margin-bottom: var(--spacing-md);
 }
 
 .loading-message {
@@ -290,7 +275,7 @@ body {
     background-color: var(--color-panel-background);
     border-radius: var(--border-radius-md);
     border: 1px solid var(--color-border);
-    margin-bottom: var(--spacing-md); /* Стандартизированный отступ снизу */
+    margin-bottom: var(--spacing-md);
     padding: var(--spacing-md);
 }
 
@@ -333,27 +318,24 @@ body {
     padding: var(--spacing-sm) 0;
 }
 
-/* Секция графиков */
 .graphs-section {
     padding: var(--spacing-md);
     background-color: var(--color-light-grey);
     flex-shrink: 0;
     overflow-y: auto;
-    margin-bottom: var(--spacing-md); /* Установлено одинаковое расстояние */
+    margin-bottom: var(--spacing-md);
 
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--spacing-md); /* Отступы между плитками внутри graphs-section */
+    gap: var(--spacing-md);
 }
 
-/* Стили для карточек графиков (плиток) */
 .graphs-card {
     background-color: var(--color-panel-background);
     border-radius: var(--border-radius-md);
     border: 1px solid var(--color-border);
     padding: var(--spacing-md);
     box-shadow: none;
-    /* margin-bottom: var(--spacing-md); */ /* Удален, так как родительский graphs-section управляет отступами через gap */
 }
 
 .graphs-card h4 {
@@ -369,7 +351,7 @@ body {
     border-radius: var(--border-radius-md);
     border: none;
     height: 250px;
-    margin-bottom: var(--spacing-md); /* Установлено одинаковое расстояние */
+    margin-bottom: var(--spacing-md);
     position: relative;
 }
 
@@ -378,15 +360,13 @@ body {
     height: 100% !important;
 }
 
-/* Список тестовых запусков (таблица) */
 .test-list-wrapper {
     flex: 1;
     overflow-y: auto;
     padding-top: 0;
-    /* Добавляем обводку и скругление */
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-md);
-    background-color: var(--color-panel-background); /* Фон для обводки */
+    background-color: var(--color-panel-background);
 }
 
 .test-list-table {
@@ -475,7 +455,6 @@ body {
     white-space: nowrap;
 }
 
-/* Заглушка для правой панели */
 .placeholder-content {
     text-align: center;
     margin-top: 100px;
@@ -487,22 +466,21 @@ body {
     margin-bottom: var(--spacing-md);
 }
 
-/* Блоки деталей теста */
 .detail-block {
-    margin-bottom: var(--spacing-md); /* Добавляем отступ между блоками */
-    background-color: var(--color-panel-background); /* Белый фон для самих блоков */
-    border-radius: var(--border-radius-md); /* Немного скругляем углы */
-    padding: var(--spacing-md); /* Внутренний отступ */
-    border: 1px solid var(--color-border); /* Легкая граница */
-    box-shadow: var(--shadow-xxs); /* Легкая тень */
+    margin-bottom: var(--spacing-md);
+    background-color: var(--color-panel-background);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-xxs);
 }
 
 .detail-block:last-child {
-    margin-bottom: 0; /* Убираем отступ у последнего блока */
+    margin-bottom: 0;
 }
 
 .right-panel .detail-block:first-of-type {
-    padding-top: var(--spacing-md); /* Добавляем padding-top для первого блока, чтобы он не прилипал к верху */
+    padding-top: var(--spacing-md);
 }
 
 .detail-block h3 {
@@ -514,33 +492,31 @@ body {
     gap: var(--spacing-sm);
     color: var(--color-text-primary);
     box-sizing: border-box;
-    /* Убираем отрицательные маржины и ширину, так как блок теперь имеет свой padding и фон */
-    padding: 0; /* Заголовок внутри блока не требует дополнительного padding */
-    background-color: transparent; /* Заголовок наследует фон родительского блока */
-    border-top: none; /* Убираем границы у заголовка */
-    border-bottom: none; /* Убираем границы у заголовка */
-    box-shadow: none; /* Убираем тени у заголовка */
+    padding: 0;
+    background-color: transparent;
+    border-top: none;
+    border-bottom: none;
+    box-shadow: none;
     margin-left: 0;
     margin-right: 0;
     width: auto;
     z-index: auto;
     position: static;
     top: auto;
-    margin-bottom: var(--spacing-md); /* Отступ между заголовком и содержимым блока */
+    margin-bottom: var(--spacing-md);
 }
 
 .detail-block > *:not(h3):first-of-type {
-    margin-top: 0; /* Убираем лишний margin-top, так как заголовок имеет свой margin-bottom */
+    margin-top: 0;
 }
 
-/* Стили для списков внутри detail-block */
 .detail-block ul {
     list-style: none;
     padding: 0;
     margin: 0;
-    border: 1px solid var(--color-border); /* Обводка для списка */
-    border-radius: var(--border-radius-md); /* Скругление углов */
-    overflow: hidden; /* Скрывает скругленные углы у элементов списка */
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
 }
 
 .detail-block ul li {
@@ -549,10 +525,9 @@ body {
 }
 
 .detail-block ul li:last-child {
-    border-bottom: none; /* Убираем нижнюю границу у последнего элемента списка */
+    border-bottom: none;
 }
 
-/* Дополнительные отступы для элементов внутри detail-block */
 .detail-block > :last-child:not(h3) {
     margin-bottom: 0;
 }
@@ -562,7 +537,6 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: var(--spacing-sm) var(--spacing-md);
     font-size: 15px;
-    /* Убедимся, что info-grid не имеет лишнего нижнего отступа внутри блока */
     margin-bottom: 0;
 }
 
@@ -588,7 +562,6 @@ body {
 .status-badge.status-failed { background-color: var(--color-failure-background); color: var(--color-failure); }
 .status-badge.status-skipped { background-color: var(--color-skipped-background); color: var(--color-skipped); }
 
-/* Результаты анализа AI */
 .analysis-result-item {
     background: var(--color-panel-background);
     border: 1px solid var(--color-border);
@@ -691,7 +664,6 @@ pre.error-pre {
     color: var(--color-text-primary);
 }
 
-/* Секция обратной связи */
 .feedback-section {
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-sm);
@@ -753,7 +725,6 @@ pre.error-pre {
     margin-left: auto;
 }
 
-/* Визуализатор пути выполнения */
 .execution-path-visualizer {
     list-style: none;
     padding: 0;
@@ -764,8 +735,8 @@ pre.error-pre {
 
 .execution-path-visualizer::before {
     position: absolute;
-    left: 11px; /* Выравниваем по центру кружка */
-    top: 22px; /* Начинаем ниже кружка первого элемента */
+    left: 11px;
+    top: 22px;
     bottom: 0;
     width: 2px;
     background-color: var(--color-border);
@@ -775,17 +746,17 @@ pre.error-pre {
 .execution-path-visualizer li {
     position: relative;
     padding: var(--spacing-xs) 0 var(--spacing-xs) var(--spacing-xl);
-    margin-bottom: var(--spacing-sm); /* Отступ между элементами списка */
+    margin-bottom: var(--spacing-sm);
 }
 
 .execution-path-visualizer li:last-child {
     margin-bottom: 0;
 }
 
-.step-icon { /* Заглушка, если иконки будут в отдельном элементе */
+.step-icon {
     position: absolute;
     left: 0;
-    top: 8px; /* Выравниваем по верхней части заголовка шага */
+    top: 8px;
     font-size: 20px;
     background-color: var(--color-panel-background);
     padding: 0 2px;
@@ -802,7 +773,7 @@ pre.error-pre {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xs); /* Отступ между заголовком и деталями шага */
+    margin-bottom: var(--spacing-xs);
 }
 
 .step-header strong {
@@ -839,21 +810,18 @@ pre.error-pre {
     font-size: 11px;
     font-weight: 500;
     white-space: nowrap;
-    margin-left: auto; /* Прижимает статус к правому краю */
+    margin-left: auto;
 }
 
-/* Цветовая дифференциация для .step-status */
 .step-status.status-passed { background-color: var(--color-success-background); color: var(--color-success); }
 .step-status.status-failed { background-color: var(--color-failure-background); color: var(--color-failure); }
 .step-status.status-skipped { background-color: var(--color-skipped-background); color: var(--color-skipped); }
-
 
 .step-error-message {
     color: var(--color-failure);
     font-weight: 500;
 }
 
-/* Стили для тегов */
 .tags-container {
     display: flex;
     flex-wrap: wrap;
@@ -870,12 +838,9 @@ pre.error-pre {
     white-space: nowrap;
 }
 
-/* Стили для пользовательских метаданных */
 .custom-metadata-grid {
-    /* Можно добавить специфичные стили, если потребуется */
 }
 
-/* Стили для артефактов */
 .artifact-links {
     font-size: 15px;
 }
@@ -897,7 +862,6 @@ pre.error-pre {
     text-decoration: underline;
 }
 
-/* Футер */
 .app-footer {
     text-align: center;
     padding: var(--spacing-md);
@@ -907,7 +871,6 @@ pre.error-pre {
     background-color: var(--color-background);
 }
 
-/* Уведомления (Toast) */
 .toast-container {
     position: fixed;
     bottom: var(--spacing-lg);
@@ -954,7 +917,6 @@ pre.error-pre {
     color: white;
 }
 
-/* Медиа-запросы для адаптивности */
 @media (max-width: 1200px) {
     .left-panel {
         flex: 0 0 550px;
@@ -962,9 +924,8 @@ pre.error-pre {
 }
 
 @media (max-width: 992px) {
-    /* На мобильных устройствах, чтобы сохранить отступы, detail-block будет иметь паддинг, а right-panel останется серым */
     .detail-block {
-        padding: var(--spacing-md); /* Установлен единый padding */
+        padding: var(--spacing-md);
         margin-left: 0;
         margin-right: 0;
         background-color: var(--color-panel-background);
@@ -978,22 +939,20 @@ pre.error-pre {
     }
 
     .detail-block:last-child {
-        padding-bottom: var(--spacing-md); /* Изменено на md, чтобы было consistent */
+        padding-bottom: var(--spacing-md);
     }
 
     .detail-block h3 {
         position: static;
-        padding: 0; /* Убираем padding у h3, так как он уже есть у родителя */
+        padding: 0;
         margin-left: 0;
         margin-right: 0;
-        border-bottom: none; /* Убираем границу у заголовка */
-        box-shadow: none; /* Убираем тени у заголовка */
+        border-bottom: none;
+        box-shadow: none;
         width: auto;
-        margin-bottom: var(--spacing-md); /* Отступ между заголовком и содержимым блока */
+        margin-bottom: var(--spacing-md);
     }
 
-    /* Убираем избыточный padding-bottom у этих элементов,
-       так как их родительский detail-block уже имеет padding-bottom */
     .info-grid,
     .analysis-result-item,
     .failure-subsection,
@@ -1001,11 +960,8 @@ pre.error-pre {
     .tags-container,
     .custom-metadata-grid,
     .artifact-links {
-        /*border-bottom: none; - это свойство не относится к данным элементам
-          если эти элементы сами по себе являются последними в detail-block,
-          то их margin-bottom должен быть обнулен */
-        margin-bottom: 0; /* Убираем нижний отступ, если это последний элемент */
-        padding-bottom: 0; /* Убираем нижний внутренний отступ */
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
 
     .detail-block > :last-child.info-grid,
@@ -1034,7 +990,6 @@ pre.error-pre {
         width: auto;
         justify-content: center;
     }
-    /* Убрал padding у app-main, так как right-panel имеет свой padding */
     .app-main {
         padding: 0;
     }
@@ -1055,71 +1010,64 @@ pre.error-pre {
         padding: var(--spacing-sm);
         font-size: 14px;
     }
-    .graphs-section { /* На мобильных устройствах графики будут в одну колонку */
+    .graphs-section {
         grid-template-columns: 1fr;
     }
     .chart-container {
         height: 200px;
     }
 
-    /* На маленьких экранах убираем левую панель и делаем список во всю ширину */
     .left-panel {
-        flex: 1 1 100%; /* Занимает всю ширину */
-        padding: var(--spacing-sm); /* Меньше отступы */
+        flex: 1 1 100%;
+        padding: var(--spacing-sm);
     }
 
-    /* Таблица на маленьких экранах */
     .test-list-wrapper {
-        border-radius: 0; /* Убираем скругление для полного захвата ширины */
+        border-radius: 0;
     }
 
     .test-list-table thead th,
     .test-list-table tbody td {
-        padding: var(--spacing-xs) var(--spacing-sm); /* Меньше паддинга */
+        padding: var(--spacing-xs) var(--spacing-sm);
     }
 
-    /* Правая панель, чтобы она не отображалась, когда активна вкладка "Список запусков" */
     .right-panel {
-        display: none; /* По умолчанию скрываем правую панель */
-        position: fixed; /* Фиксируем, чтобы она могла перекрывать левую */
+        display: none;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 1000; /* Выше, чем левая панель */
-        background-color: var(--color-background); /* Фон для перекрытия */
+        z-index: 1000;
+        background-color: var(--color-background);
         padding: var(--spacing-md);
         overflow-y: auto;
     }
 
-    /* Если активна вкладка "Детали", показываем правую панель */
     body.show-right-panel .right-panel {
         display: block;
     }
 
-    /* Принудительно показываем правый панель, если выбран тест и это мобильный вид */
     .test-row.selected + .right-panel {
-        display: block; /* Этот селектор может быть сложным, возможно, лучше управлять видимостью через JS-класс на body */
+        display: block;
     }
 
-    /* Управляем видимостью панелей на мобильных через JS-класс на body */
     body:not(.show-details-on-mobile) .left-panel {
-        display: flex; /* Показываем левую панель */
+        display: flex;
     }
 
     body.show-details-on-mobile .left-panel {
-        display: none; /* Скрываем левую панель, когда показываем детали */
+        display: none;
     }
 
     body.show-details-on-mobile .right-panel {
-        display: flex; /* Показываем правую панель */
+        display: flex;
         flex-direction: column;
-        padding-top: calc(var(--spacing-md) + 40px); /* Отступ для кнопки "Назад" */
+        padding-top: calc(var(--spacing-md) + 40px);
     }
 
-    /* Кнопка "Назад" для мобильных */
     .back-to-list-button {
-        display: none; /* По умолчанию скрыта */
+        display: none;
         position: fixed;
         top: var(--spacing-sm);
         left: var(--spacing-sm);
@@ -1134,6 +1082,6 @@ pre.error-pre {
     }
 
     body.show-details-on-mobile .back-to-list-button {
-        display: block; /* Показываем, когда открыты детали */
+        display: block;
     }
 }

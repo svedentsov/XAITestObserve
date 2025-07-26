@@ -6,13 +6,9 @@ import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-/**
- * Анализатор для исключения {@code TimeoutException}.
- */
 @Component
 @Order(13)
 public class TimeoutExceptionAnalyzer implements FailureAnalyzer {
-
     @Override
     public boolean canAnalyze(FailureEventDTO event) {
         return event.getExceptionType() != null && event.getExceptionType().contains("TimeoutException");

@@ -6,8 +6,8 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
-@EnableAsync // Включаем асинхронную обработку
-@EnableCaching // Включаем поддержку кэширования
+@EnableAsync
+@EnableCaching
 public class XaiObserverAppApplication {
     public static void main(String[] args) {
         SpringApplication.run(XaiObserverAppApplication.class, args);

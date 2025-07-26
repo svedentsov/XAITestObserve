@@ -11,45 +11,45 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class DemoDataFactory {
-
     private static final List<String> TEST_CLASSES = List.of(
-            "com.example.tests.LoginTests",
             "com.example.tests.CartTests",
             "com.example.tests.CheckoutTests",
-            "com.example.tests.SearchTests",
-            "com.example.tests.ProfileTests"
-    );
-
+            "com.example.tests.LoginTests",
+            "com.example.tests.ProfileTests",
+            "com.example.tests.SearchTests");
     private static final List<String> TEST_METHODS_LOGIN = List.of(
-            "testSuccessfulLogin", "testInvalidPassword", "testUserNotFound", "testLoginWithEmptyFields"
-    );
+            "testInvalidPassword",
+            "testLoginWithEmptyFields",
+            "testSuccessfulLogin",
+            "testUserNotFound");
     private static final List<String> TEST_METHODS_CART = List.of(
-            "testAddToCart", "testRemoveFromCart", "testUpdateQuantity", "testEmptyCart"
-    );
+            "testAddToCart",
+            "testEmptyCart",
+            "testRemoveFromCart",
+            "testUpdateQuantity");
     private static final List<String> TEST_METHODS_CHECKOUT = List.of(
-            "testGuestCheckout", "testRegisteredCheckout", "testPaymentFailure", "testShippingError"
-    );
+            "testGuestCheckout",
+            "testRegisteredCheckout",
+            "testPaymentFailure",
+            "testShippingError");
     private static final List<String> TEST_METHODS_SEARCH = List.of(
-            "testSearchValidProduct", "testSearchNoResults", "testSearchSpecialChars"
-    );
-
+            "testSearchValidProduct",
+            "testSearchNoResults",
+            "testSearchSpecialChars");
     private static final List<String> EXCEPTION_TYPES = List.of(
             "org.openqa.selenium.NoSuchElementException",
             "org.openqa.selenium.TimeoutException",
             "org.openqa.selenium.StaleElementReferenceException",
             "java.lang.AssertionError",
             "java.lang.NullPointerException",
-            "org.openqa.selenium.WebDriverException"
-    );
-
+            "org.openqa.selenium.WebDriverException");
     private static final List<String> EXCEPTION_MESSAGES = List.of(
             "Элемент 'submit button' не найден на странице.",
             "Элемент не доступен после 30 секунд ожидания.",
             "Элемент устарел: страница была обновлена.",
             "Ожидаемый заголовок 'Dashboard' не найден, фактический 'Login Page'.",
             "Попытка доступа к неинициализированному объекту.",
-            "Ошибка при взаимодействии с драйвером браузера."
-    );
+            "Ошибка при взаимодействии с драйвером браузера.");
 
     private static final List<String> OS_TYPES = List.of("Windows", "macOS", "Linux");
     private static final List<String> OS_VERSIONS = List.of("10", "11", "Ventura", "Ubuntu 22.04");
@@ -62,15 +62,6 @@ public class DemoDataFactory {
     private static final List<String> TEST_SUITES = List.of("Regression", "Smoke", "E2E", "Performance");
     private static final List<String> TEST_TAGS_GENERAL = List.of("critical", "P1", "UI", "backend");
 
-    /**
-     * Генерирует случайное событие о завершении теста ({@link FailureEventDTO})
-     * для демонстрационных целей.
-     * Случайным образом определяет, будет ли тест провален (60% шанс) или успешен,
-     * а также генерирует метаданные для шагов выполнения, включая информацию о сбойном шаге
-     * и типе исключения в случае провала.
-     *
-     * @return Сгенерированный объект {@link FailureEventDTO}.
-     */
     public FailureEventDTO generateRandomEvent() {
         boolean isFailed = ThreadLocalRandom.current().nextDouble() < 0.6; // 60% шанс на FAILED
         long currentTime = System.currentTimeMillis();
@@ -144,14 +135,11 @@ public class DemoDataFactory {
         }
         event.setArtifacts(artifacts);
 
-        // Генерация Custom Metadata
         Map<String, String> customMetadata = new HashMap<>();
         customMetadata.put("buildNumber", "build-" + ThreadLocalRandom.current().nextInt(100, 500));
         customMetadata.put("jenkinsJobUrl", "http://jenkins.example.com/job/" + event.getTestClass());
         event.setCustomMetadata(customMetadata);
 
-
-        // Генерация шагов
         List<AiDecisionMetadata> executionPath = new ArrayList<>();
         long currentStepTime = startTime;
 
@@ -212,7 +200,6 @@ public class DemoDataFactory {
             executionPath.add(step2);
         }
 
-
         if (isFailed) {
             String randomExceptionType = EXCEPTION_TYPES.get(ThreadLocalRandom.current().nextInt(EXCEPTION_TYPES.size()));
             String randomExceptionMessage = EXCEPTION_MESSAGES.get(ThreadLocalRandom.current().nextInt(EXCEPTION_MESSAGES.size()));
@@ -245,10 +232,9 @@ public class DemoDataFactory {
             finalStep.setConfidenceScore(0.99);
             finalStep.setResult("SUCCESS");
             finalStep.setStepStartTime(currentStepTime);
-            finalStep.setStepEndTime(endTime); // Ensure final step endTime matches event endTime
+            finalStep.setStepEndTime(endTime);
             finalStep.setStepDurationMillis(finalStep.getStepEndTime() - finalStep.getStepStartTime());
             executionPath.add(finalStep);
-
             event.setExecutionPath(executionPath);
         }
         return event;

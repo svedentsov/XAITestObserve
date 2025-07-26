@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class DashboardApiController {
-
     private final TestEventOrchestrator testEventOrchestrator;
     private final TestRunService testRunService;
     private final StatisticsService statisticsService;

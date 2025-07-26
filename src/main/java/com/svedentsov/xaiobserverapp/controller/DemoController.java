@@ -13,7 +13,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequiredArgsConstructor
 public class DemoController {
-
     private final TestEventOrchestrator testEventOrchestrator;
     private final DemoDataFactory demoDataFactory;
 
