@@ -26,6 +26,7 @@ public class TestEventOrchestrator {
     private final RcaService rcaService;
     private final NotificationService notificationService;
     private final TestRunMapper testRunMapper;
+    private final StatisticsService statisticsService;
 
     @Async
     @Transactional
@@ -41,5 +42,6 @@ public class TestEventOrchestrator {
         if (savedTestRun.getStatus() == TestRun.TestStatus.FAILED) {
             notificationService.notifyAboutFailure(savedTestRun);
         }
+        statisticsService.clearStatisticsCache();
     }
 }

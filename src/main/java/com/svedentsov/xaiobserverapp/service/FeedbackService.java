@@ -26,7 +26,9 @@ public class FeedbackService {
         log.info("Processing feedback for analysis ID {}: isCorrect={}", analysisId, feedbackDTO.getIsAiSuggestionCorrect());
         AnalysisResult analysisResult = analysisResultRepository.findById(analysisId)
                 .orElseThrow(() -> new ResourceNotFoundException("Analysis with ID " + analysisId + " not found"));
-        analysisResult.setUserConfirmedCorrect(feedbackDTO.getIsAiSuggestionCorrect());
+        if (feedbackDTO.getIsAiSuggestionCorrect() != null) {
+            analysisResult.setUserConfirmedCorrect(feedbackDTO.getIsAiSuggestionCorrect());
+        }
         AnalysisFeedback feedback = new AnalysisFeedback();
         feedback.setAnalysisResult(analysisResult);
         feedback.setIsAiSuggestionCorrect(feedbackDTO.getIsAiSuggestionCorrect());

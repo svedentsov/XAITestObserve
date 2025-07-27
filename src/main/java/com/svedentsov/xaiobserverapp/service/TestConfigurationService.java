@@ -11,58 +11,49 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TestConfigurationService {
     private final TestConfigurationRepository testConfigurationRepository;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public TestConfiguration findOrCreateConfiguration(FailureEventDTO event) {
         String uniqueName = buildUniqueName(event);
-
-        return testConfigurationRepository.findByUniqueName(uniqueName)
-                .orElseGet(() -> {
-                    try {
-                        log.info("Creating new configuration for uniqueName: {}", uniqueName);
-                        TestConfiguration newConfig = createNewConfiguration(event, uniqueName);
-                        return testConfigurationRepository.save(newConfig);
-                    } catch (DataIntegrityViolationException e) {
-                        log.warn("Race condition detected. Another thread already created the configuration. Fetching existing one. UniqueName: {}", uniqueName);
-                        return testConfigurationRepository.findByUniqueName(uniqueName)
-                                .orElseThrow(() -> new IllegalStateException("Could not find configuration after race condition: " + uniqueName));
-                    }
-                });
+        Optional<TestConfiguration> existingConfig = this.findByUniqueName(uniqueName);
+        return existingConfig.orElseGet(() -> createConfiguration(event, uniqueName));
     }
 
-    private TestConfiguration createNewConfiguration(FailureEventDTO event, String uniqueName) {
-        TestConfiguration newConfig = new TestConfiguration();
-        newConfig.setAppVersion(StringUtils.hasText(event.getAppVersion()) ? event.getAppVersion() : "unknown");
-        newConfig.setTestSuite(StringUtils.hasText(event.getTestSuite()) ? event.getTestSuite() : "default");
-        newConfig.setEnvironment(event.getEnvironmentDetails() != null && StringUtils.hasText(event.getEnvironmentDetails().getName()) ? event.getEnvironmentDetails().getName() : "unknown");
-        newConfig.setUniqueName(uniqueName);
-        return newConfig;
+    @Transactional(readOnly = true)
+    public Optional<TestConfiguration> findByUniqueName(String uniqueName) {
+        return testConfigurationRepository.findByUniqueName(uniqueName);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public TestConfiguration createConfiguration(FailureEventDTO event, String uniqueName) {
+        try {
+            log.info("Creating new configuration for uniqueName: {}", uniqueName);
+            TestConfiguration newConfig = new TestConfiguration();
+            newConfig.setAppVersion(StringUtils.hasText(event.getAppVersion()) ? event.getAppVersion() : "unknown");
+            newConfig.setTestSuite(StringUtils.hasText(event.getTestSuite()) ? event.getTestSuite() : "default");
+            newConfig.setEnvironment(event.getEnvironmentDetails() != null && StringUtils.hasText(event.getEnvironmentDetails().getName()) ? event.getEnvironmentDetails().getName() : "unknown");
+            newConfig.setUniqueName(uniqueName);
+            return testConfigurationRepository.saveAndFlush(newConfig);
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Race condition detected while creating configuration for uniqueName: {}. Fetching existing one.", uniqueName);
+            return testConfigurationRepository.findByUniqueName(uniqueName)
+                    .orElseThrow(() -> new IllegalStateException("FATAL: Could not find configuration for " + uniqueName + " after a race condition."));
+        }
     }
 
     private String buildUniqueName(FailureEventDTO event) {
         String appVersion = StringUtils.hasText(event.getAppVersion()) ? event.getAppVersion() : "unknown";
         String testSuite = StringUtils.hasText(event.getTestSuite()) ? event.getTestSuite() : "default";
         String environmentName = "unknown";
-        String environmentDetailsHash = "unknown_env";
-        if (event.getEnvironmentDetails() != null) {
-            environmentName = StringUtils.hasText(event.getEnvironmentDetails().getName()) ? event.getEnvironmentDetails().getName() : "unknown";
-            environmentDetailsHash = String.format("%s-%s-%s-%s-%s-%s-%s-%s-%s",
-                    environmentName,
-                    event.getEnvironmentDetails().getOsType(),
-                    event.getEnvironmentDetails().getOsVersion(),
-                    event.getEnvironmentDetails().getBrowserType(),
-                    event.getEnvironmentDetails().getBrowserVersion(),
-                    event.getEnvironmentDetails().getScreenResolution(),
-                    event.getEnvironmentDetails().getDeviceType(),
-                    event.getEnvironmentDetails().getDeviceName(),
-                    event.getEnvironmentDetails().getDriverVersion()
-            ).toLowerCase().replaceAll("[^a-z0-9-]", "_");
+        if (event.getEnvironmentDetails() != null && StringUtils.hasText(event.getEnvironmentDetails().getName())) {
+            environmentName = event.getEnvironmentDetails().getName();
         }
-        return String.format("%s-%s-%s-%s", appVersion, testSuite, environmentName, environmentDetailsHash);
+        return String.format("%s-%s-%s", appVersion, testSuite, environmentName).toLowerCase();
     }
 }

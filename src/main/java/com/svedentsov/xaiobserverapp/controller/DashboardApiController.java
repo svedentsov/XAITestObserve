@@ -51,10 +51,17 @@ public class DashboardApiController {
     }
 
     @PostMapping("/analysis/{analysisId}/feedback")
-    public ResponseEntity<?> submitFeedback(
+    public ResponseEntity<Void> submitFeedback(
             @PathVariable String analysisId,
             @RequestBody AnalysisFeedbackDTO feedbackDTO) {
         feedbackService.processFeedback(analysisId, feedbackDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/tests/all")
+    public ResponseEntity<Void> deleteAllData() {
+        log.warn("API request to DELETE ALL test run data has been received.");
+        testRunService.deleteAllTestRuns();
+        return ResponseEntity.noContent().build();
     }
 }

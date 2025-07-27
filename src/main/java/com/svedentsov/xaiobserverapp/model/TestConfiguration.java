@@ -16,12 +16,6 @@ public class TestConfiguration {
     @Column(nullable = false)
     private String environment;
     private String testSuite;
-    @Column(unique = true)
+    @Column(unique = true, length = 512)
     private String uniqueName;
-
-    @PrePersist
-    @PreUpdate
-    private void generateUniqueName() {
-        this.uniqueName = String.format("%s-%s-%s", appVersion, environment, testSuite).toLowerCase();
-    }
 }

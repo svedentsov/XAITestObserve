@@ -19,20 +19,27 @@ public class DashboardController {
 
     @GetMapping("/")
     public String getDashboard(Model model) {
-        log.debug("Запрос на отображение главного дашборда.");
+        log.debug("Request to display the main dashboard.");
         model.addAttribute("testRuns", testRunService.getAllTestRunsOrderedByTimestampDesc());
         return "dashboard";
     }
 
     @GetMapping("/test/{id}")
     public String getTestDetail(@PathVariable String id, Model model) {
-        log.debug("Запрос деталей тестового запуска с ID: {} для UI.", id);
+        log.debug("Request for test run details with ID: {} for UI.", id);
         TestRun testRun = testRunService.getTestRunById(id)
                 .orElseThrow(() -> {
-                    log.warn("Тестовый запуск с ID: {} не найден.", id);
-                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Тестовый запуск не найден");
+                    log.warn("Test run with ID: {} not found.", id);
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Test run not found");
                 });
         model.addAttribute("testRun", testRun);
         return "test-detail";
+    }
+
+    @GetMapping("/test-list-fragment")
+    public String getTestRunListFragment(Model model) {
+        log.debug("Request for test list fragment.");
+        model.addAttribute("testRuns", testRunService.getAllTestRunsOrderedByTimestampDesc());
+        return "dashboard :: testListBody";
     }
 }

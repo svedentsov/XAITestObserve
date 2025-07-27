@@ -1,28 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- DOM Elements Cache ---
     const DOM_ELEMENTS = {
         rightPanelContent: document.getElementById('rightPanelContent'),
-        testRows: document.querySelectorAll('.test-row'),
         toastContainer: document.getElementById('toastContainer'),
         statsContainer: document.getElementById('stats-container'),
         passRateChartCtx: document.getElementById('passRateChart'),
         slowTestsChartCtx: document.getElementById('slowTestsChart'),
         tabButtons: document.querySelectorAll('.tab-button'),
         tabContents: document.querySelectorAll('.tab-content'),
-        initialSuccessAlert: document.querySelector('.initial-alert-message.success'),
-        initialErrorAlert: document.querySelector('.initial-alert-message.error'),
-        detailBlockHeaders: null // Будет заполнено при загрузке деталей
+        testListTableBody: document.getElementById('testListTableBody'),
     };
 
-    // --- API Endpoints ---
     const API_ENDPOINTS = {
         statistics: '/api/v1/statistics',
         testDetails: (id) => `/api/v1/tests/${id}`,
-        feedback: (id) => `/api/v1/analysis/${id}/feedback`
+        feedback: (id) => `/api/v1/analysis/${id}/feedback`,
+        deleteAll: '/api/v1/tests/all',
+        createDemo: '/demo/create',
+        testListFragment: '/test-list-fragment'
     };
 
-    // --- User-facing Messages ---
     const UI_MESSAGES = {
         feedbackSuccess: 'Спасибо за ваш отзыв!',
         feedbackError: 'Не удалось отправить отзыв. Попробуйте снова.',
@@ -36,82 +33,56 @@ document.addEventListener('DOMContentLoaded', () => {
         errorState: 'Произошла ошибка.'
     };
 
-    // --- Chart Instances ---
     let passRateChart = null;
     let slowTestsChart = null;
+    const testDetailsCache = new Map();
 
-    // IntersectionObserver для sticky заголовков
-    let stickyHeaderObserver = null;
-
-    /**
-     * Initializes the dashboard by loading data and setting up event listeners.
-     */
     function initDashboard() {
         console.log('Dashboard initialization started.');
-        loadInitialMessages();
+
+        restoreActiveTab();
         loadStatistics();
         initializeTestRowClickListeners();
+        formatTestRunTimes();
         loadInitialTestDetails();
         initializeTabSwitching();
-        // В этой функции мы теперь будем форматировать дату прямо из dataset.time
-        formatTestRunTimes();
+        initializeHeaderActions();
+
         console.log('Dashboard initialization complete.');
     }
 
-    /**
-     * Displays initial success or error messages from the Thymeleaf model as toasts.
-     */
-    function loadInitialMessages() {
-        if (DOM_ELEMENTS.initialSuccessAlert && DOM_ELEMENTS.initialSuccessAlert.textContent.trim()) {
-            showToast(DOM_ELEMENTS.initialSuccessAlert.textContent.trim(), 'success');
-        }
-        if (DOM_ELEMENTS.initialErrorAlert && DOM_ELEMENTS.initialErrorAlert.textContent.trim()) {
-            showToast(DOM_ELEMENTS.initialErrorAlert.textContent.trim(), 'error');
+    function restoreActiveTab() {
+        const savedTabId = localStorage.getItem('activeTabId');
+        if (savedTabId) {
+            DOM_ELEMENTS.tabButtons.forEach(btn => btn.classList.remove('active'));
+            DOM_ELEMENTS.tabContents.forEach(content => content.classList.remove('active'));
+
+            const savedButton = document.querySelector(`.tab-button[data-tab="${savedTabId}"]`);
+            const savedContent = document.getElementById(`${savedTabId}TabContent`);
+
+            if (savedButton && savedContent) {
+                savedButton.classList.add('active');
+                savedContent.classList.add('active');
+                console.log(`Restored active tab to: ${savedTabId}`);
+            }
         }
     }
 
-    /**
-     * Formats the 'Время Запуска' column header and its corresponding date cells.
-     */
     function formatTestRunTimes() {
-        // Find the 'Время Запуска' column header and rename it
-        let runTimeHeader = null;
-        const headers = document.querySelectorAll('.test-list-table thead th');
-        headers.forEach(th => {
-            // Check for both current and original text to be safe
-            if (th.textContent.trim() === 'Время Запуска' || th.textContent.trim() === 'Время запуска') {
-                runTimeHeader = th;
-                th.textContent = 'Время запуска'; // Standardize the header text
+        document.querySelectorAll('.test-run-time-cell').forEach(cell => {
+            const timestamp = cell.dataset.timestamp;
+            if (timestamp) {
+                cell.textContent = formatDateTime(timestamp);
             }
         });
-
-        // Format the time in each row based on the data-timestamp attribute
-        DOM_ELEMENTS.testRows.forEach(row => {
-            // Find the <td> that contains the timestamp. Assuming it's the last <td>
-            const timeCell = row.querySelector('td:last-child');
-            if (timeCell && timeCell.dataset.timestamp) { // Check if data-timestamp exists
-                const originalTimestamp = timeCell.dataset.timestamp; // Get the raw timestamp
-                timeCell.textContent = formatDateTime(originalTimestamp); // Format and update display
-            }
-        });
-
-        console.log('Test run times formatted and column header updated.');
+        console.log('Test run times formatted.');
     }
 
-
-    /**
-     * Fetches and renders statistics and charts.
-     */
     async function loadStatistics() {
         DOM_ELEMENTS.statsContainer.innerHTML = `<p class="loading-message">${UI_MESSAGES.loadingStats}</p>`;
         try {
-            const response = await fetch(API_ENDPOINTS.statistics);
-            if (!response.ok) {
-                // Log full response for debugging on server side
-                const errorText = await response.text();
-                console.error(`HTTP error fetching statistics: ${response.status} - ${errorText}`);
-                throw new Error(UI_MESSAGES.statsError);
-            }
+            const response = await fetch(`${API_ENDPOINTS.statistics}?_=${new Date().getTime()}`);
+            if (!response.ok) throw new Error('Failed to fetch statistics');
             const stats = await response.json();
             renderStatistics(stats);
             renderPassRateChart(stats.dailyPassRateTrend);
@@ -119,15 +90,45 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Statistics loaded and rendered successfully.');
         } catch (error) {
             console.error('Error loading statistics:', error);
-            DOM_ELEMENTS.statsContainer.innerHTML = `<p class="loading-message error">${escapeHtml(error.message)}</p>`;
-            showToast(UI_MESSAGES.statsError, 'error');
+            DOM_ELEMENTS.statsContainer.innerHTML = `<p class="loading-message error">Не удалось загрузить статистику.</p>`;
+            showToast('Не удалось загрузить статистику.', 'error');
         }
     }
 
-    /**
-     * Renders the statistics cards and top failing tests.
-     * @param {object} stats - Statistics data.
-     */
+    async function refreshDashboardData() {
+        console.log('Refreshing all dashboard data...');
+        await Promise.all([
+            loadStatistics(),
+            reloadTestRunList()
+        ]);
+        console.log('Dashboard data refreshed.');
+    }
+
+    async function reloadTestRunList() {
+        try {
+            const response = await fetch(API_ENDPOINTS.testListFragment);
+            if (!response.ok) throw new Error('Could not fetch test list fragment.');
+
+            const newTbodyHtml = await response.text();
+            DOM_ELEMENTS.testListTableBody.innerHTML = newTbodyHtml;
+
+            formatTestRunTimes();
+
+            const selectedId = localStorage.getItem('selectedTestId');
+            if (selectedId) {
+                const selectedRow = document.querySelector(`.test-row[data-id="${selectedId}"]`);
+                if (selectedRow) {
+                    selectedRow.classList.add('selected');
+                }
+            }
+
+            console.log('Test run list reloaded.');
+        } catch (error) {
+            console.error('Error reloading test run list:', error);
+            showToast('Не удалось обновить список тестов.', 'error');
+        }
+    }
+
     function renderStatistics(stats) {
         const totalRuns = stats.totalRuns || 0;
         const passRate = stats.passRate ? stats.passRate.toFixed(1) : 0;
@@ -171,13 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    /**
-     * Renders the Pass Rate Trend Chart.
-     * @param {Array<object>} trendData - Data for the pass rate trend.
-     */
     function renderPassRateChart(trendData) {
-        if (!DOM_ELEMENTS.passRateChartCtx) {
-            console.warn('Pass Rate Chart canvas element not found.');
+        if (!DOM_ELEMENTS.passRateChartCtx || !trendData) {
+            console.warn('Pass Rate Chart canvas element or trend data not found.');
             return;
         }
 
@@ -247,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         display: true,
                         position: 'right',
                         grid: {
-                            drawOnChartArea: false, // Only draw grid lines for the first Y-axis
+                            drawOnChartArea: false,
                         },
                         title: {
                             display: true,
@@ -255,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         ticks: {
                             callback: function(value) {
-                                return Number.isInteger(value) ? value : null; // Show only integers
+                                return Number.isInteger(value) ? value : null;
                             }
                         }
                     }
@@ -264,13 +261,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Renders the Top 5 Slowest Tests Chart.
-     * @param {Array<object>} slowTestsData - Data for the slowest tests.
-     */
     function renderSlowTestsChart(slowTestsData) {
-        if (!DOM_ELEMENTS.slowTestsChartCtx) {
-            console.warn('Slow Tests Chart canvas element not found.');
+        if (!DOM_ELEMENTS.slowTestsChartCtx || !slowTestsData) {
+            console.warn('Slow Tests Chart canvas element or data not found.');
             return;
         }
 
@@ -298,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y', // Horizontal bar chart
+                indexAxis: 'y',
                 plugins: {
                     legend: {
                         display: false
@@ -327,9 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     },
                     y: {
-                        title: {
-                            display: true,
-                            text: 'Тест Метод'
+                        ticks: {
+                           autoSkip: false,
+                           callback: function(value, index, values) {
+                               const label = this.getLabelForValue(value);
+                               return label.length > 30 ? label.substring(0, 30) + '...' : label;
+                           }
                         }
                     }
                 }
@@ -337,78 +333,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Loads and displays details for a specific test run.
-     * @param {string} testRunId - The ID of the test run.
-     * @param {HTMLElement} [selectedRow=null] - The table row element that was clicked.
-     */
     async function loadTestDetails(testRunId, selectedRow = null) {
-        DOM_ELEMENTS.testRows.forEach(row => row.classList.remove('selected'));
+        document.querySelectorAll('.test-row').forEach(row => row.classList.remove('selected'));
         if (selectedRow) {
             selectedRow.classList.add('selected');
         }
+        localStorage.setItem('selectedTestId', testRunId);
 
-        DOM_ELEMENTS.rightPanelContent.innerHTML = `<div class="placeholder-content"><p>${UI_MESSAGES.loadingDetails}</p></div>`;
-
-        // Отключаем предыдущий IntersectionObserver, если он был
-        if (stickyHeaderObserver) {
-            stickyHeaderObserver.disconnect();
-            stickyHeaderObserver = null;
+        if (testDetailsCache.has(testRunId)) {
+            console.log(`Cache HIT for test run ID: ${testRunId}`);
+            renderTestDetails(testDetailsCache.get(testRunId));
+            return;
         }
+
+        console.log(`Cache MISS for test run ID: ${testRunId}. Fetching from server...`);
+        DOM_ELEMENTS.rightPanelContent.innerHTML = `<div class="placeholder-content"><p>${UI_MESSAGES.loadingDetails}</p></div>`;
 
         try {
             const response = await fetch(API_ENDPOINTS.testDetails(testRunId));
-            if (!response.ok) {
-                const errorMessage = response.status === 404
-                    ? UI_MESSAGES.testDetailsNotFound
-                    : `${UI_MESSAGES.testDetailsServerError} ${response.status}`;
-                throw new Error(errorMessage);
-            }
+            if (!response.ok) throw new Error('Failed to fetch test details');
+
             const testRun = await response.json();
+
+            testDetailsCache.set(testRunId, testRun);
+            console.log(`Saved test run ID ${testRunId} to cache.`);
+
             renderTestDetails(testRun);
-            // После рендера деталей, инициализируем sticky заголовки
-            initializeStickyHeaders();
-            console.log(`Details for test run ${testRunId} loaded.`);
+
         } catch (error) {
             console.error('Error loading test details:', error);
-            DOM_ELEMENTS.rightPanelContent.innerHTML = `
-                <div class="placeholder-content error-state">
-                    <p>${UI_MESSAGES.errorState} ${escapeHtml(error.message)}</p>
-                </div>`;
-            showToast(error.message, 'error');
+            DOM_ELEMENTS.rightPanelContent.innerHTML = `<div class="placeholder-content error-state"><p>${UI_MESSAGES.errorState}</p></div>`;
+            showToast('Не удалось загрузить детали.', 'error');
         }
     }
 
-    /**
-     * Renders the detailed information for a test run.
-     * @param {object} testRun - The test run data.
-     */
     function renderTestDetails(testRun) {
-        // Форматируем timestamp с помощью новой функции
-        const formattedTimestamp = formatDateTime(testRun.timestamp);
-        const formattedStartTime = testRun.startTime ? formatDateTime(testRun.startTime) : 'N/A';
-        const formattedEndTime = testRun.endTime ? formatDateTime(testRun.endTime) : 'N/A';
         const durationSeconds = testRun.durationMillis ? (testRun.durationMillis / 1000).toFixed(2) : 'N/A';
-
 
         let contentHtml = `
             <div class="detail-block">
                 <h3><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Информация о запуске</h3>
-                <div class="info-grid">
+                <div class="info-grid run-info-grid">
                     <p><strong>ID:</strong> ${escapeHtml(testRun.id)}</p>
                     <p><strong>Статус:</strong> <span class="status-badge status-${testRun.status.toLowerCase()}">${escapeHtml(testRun.status)}</span></p>
                     <p><strong>Класс:</strong> ${escapeHtml(testRun.testClass || 'N/A')}</p>
                     <p><strong>Метод:</strong> ${escapeHtml(testRun.testMethod || 'N/A')}</p>
-                    <p><strong>Время запуска:</strong> <span class="run-info-time">${escapeHtml(formattedStartTime)}</span></p>
-                    <p><strong>Время завершения:</strong> <span class="run-info-time">${escapeHtml(formattedEndTime)}</span></p>
+                    <p><strong>Время запуска:</strong> <span class="run-info-time">${testRun.startTime ? formatDateTime(testRun.startTime) : 'N/A'}</span></p>
+                    <p><strong>Время завершения:</strong> <span class="run-info-time">${testRun.endTime ? formatDateTime(testRun.endTime) : 'N/A'}</span></p>
                     <p><strong>Длительность:</strong> ${escapeHtml(durationSeconds)} сек</p>
-                    <p><strong>Версия приложения:</strong> ${escapeHtml(testRun.appVersion || 'N/A')}</p>
-                    <p><strong>Тестовый набор:</strong> ${escapeHtml(testRun.testSuite || 'N/A')}</p>
+                    <p><strong>Версия приложения:</strong> ${escapeHtml(testRun.configuration?.appVersion || 'N/A')}</p>
+                    <p><strong>Тестовый набор:</strong> ${escapeHtml(testRun.configuration?.testSuite || 'N/A')}</p>
                 </div>
             </div>
         `;
 
-        // Environment Details
         if (testRun.environmentDetails) {
             const env = testRun.environmentDetails;
             contentHtml += `
@@ -416,19 +394,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3><i class="fa-solid fa-desktop" aria-hidden="true"></i> Детали окружения</h3>
                     <div class="info-grid">
                         <p><strong>Имя:</strong> ${escapeHtml(env.name || 'N/A')}</p>
-                        <p><strong>ОС:</strong> ${escapeHtml(env.osType || 'N/A')} ${escapeHtml(env.osVersion || 'N/A')}</p>
-                        <p><strong>Браузер:</strong> ${escapeHtml(env.browserType || 'N/A')} ${escapeHtml(env.browserVersion || 'N/A')}</p>
-                        <p><strong>Разрешение экрана:</strong> ${escapeHtml(env.screenResolution || 'N/A')}</p>
-                        <p><strong>Тип устройства:</strong> ${escapeHtml(env.deviceType || 'N/A')}</p>
+                        <p><strong>ОС:</strong> ${escapeHtml(env.osType || 'N/A')} ${escapeHtml(env.osVersion || '')}</p>
+                        <p><strong>Браузер:</strong> ${escapeHtml(env.browserType || 'N/A')} ${escapeHtml(env.browserVersion || '')}</p>
+                        <p><strong>Разрешение:</strong> ${escapeHtml(env.screenResolution || 'N/A')}</p>
+                        <p><strong>Устройство:</strong> ${escapeHtml(env.deviceType || 'N/A')}</p>
                         ${env.deviceName ? `<p><strong>Имя устройства:</strong> ${escapeHtml(env.deviceName)}</p>` : ''}
-                        <p><strong>Версия драйвера:</strong> ${escapeHtml(env.driverVersion || 'N/A')}</p>
-                        <p><strong>Базовый URL приложения:</strong> ${env.appBaseUrl ? `<a href="${escapeHtml(env.appBaseUrl)}" target="_blank">${escapeHtml(env.appBaseUrl)}</a>` : 'N/A'}</p>
                     </div>
                 </div>
             `;
         }
 
-        // Test Tags
         if (testRun.testTags && testRun.testTags.length > 0) {
             contentHtml += `
                 <div class="detail-block">
@@ -438,50 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-        }
-
-        // Custom Metadata
-        if (testRun.customMetadata && Object.keys(testRun.customMetadata).length > 0) {
-            contentHtml += `
-                <div class="detail-block">
-                    <h3><i class="fa-solid fa-cogs" aria-hidden="true"></i> Пользовательские метаданные</h3>
-                    <div class="info-grid custom-metadata-grid">
-                        ${Object.entries(testRun.customMetadata).map(([key, value]) => `<p><strong>${escapeHtml(key)}:</strong> ${escapeHtml(value)}</p>`).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Test Artifacts
-        if (testRun.artifacts) {
-            const artifacts = testRun.artifacts;
-            let artifactLinksHtml = '';
-            if (artifacts.screenshotUrls && artifacts.screenshotUrls.length > 0) {
-                artifactLinksHtml += `<p><strong>Скриншоты:</strong> ${artifacts.screenshotUrls.map(url => `<a href="${escapeHtml(url)}" target="_blank">Скриншот</a>`).join(', ')}</p>`;
-            }
-            if (artifacts.videoUrl) {
-                artifactLinksHtml += `<p><strong>Видео:</strong> <a href="${escapeHtml(artifacts.videoUrl)}" target="_blank">Видеозапись</a></p>`;
-            }
-            if (artifacts.appLogUrls && artifacts.appLogUrls.length > 0) {
-                artifactLinksHtml += `<p><strong>Логи приложения:</strong> ${artifacts.appLogUrls.map(url => `<a href="${escapeHtml(url)}" target="_blank">Лог</a>`).join(', ')}</p>`;
-            }
-            if (artifacts.browserConsoleLogUrl) {
-                artifactLinksHtml += `<p><strong>Лог консоли браузера:</strong> <a href="${escapeHtml(artifacts.browserConsoleLogUrl)}" target="_blank">Лог</a></p>`;
-            }
-            if (artifacts.harFileUrl) {
-                artifactLinksHtml += `<p><strong>HAR файл:</strong> <a href="${escapeHtml(artifacts.harFileUrl)}" target="_blank">HAR</a></p>`;
-            }
-
-            if (artifactLinksHtml) {
-                contentHtml += `
-                    <div class="detail-block">
-                        <h3><i class="fa-solid fa-box-open" aria-hidden="true"></i> Артефакты</h3>
-                        <div class="artifact-links">
-                            ${artifactLinksHtml}
-                        </div>
-                    </div>
-                `;
-            }
         }
 
         if (testRun.analysisResults && testRun.analysisResults.length > 0) {
@@ -503,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h4>${escapeHtml(result.analysisType)} <span class="ai-confidence">${confidence}</span></h4>
                         <p><strong>Причина:</strong> ${escapeHtml(result.suggestedReason || 'N/A')}</p>
                         <p><strong>Решение:</strong> ${escapeHtml(result.solution || 'N/A')}</p>
-                        ${result.rawData ? `<p><strong>Сопутствующие данные:</strong></p><pre class="raw-data-block">${escapeHtml(result.rawData)}</pre>` : ''}
+                        ${result.rawData ? `<details><summary>Сопутствующие данные</summary><pre class="raw-data-block">${escapeHtml(result.rawData)}</pre></details>` : ''}
                         ${feedbackHtml}
                     </div>`;
             });
@@ -513,23 +444,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (testRun.status === 'FAILED') {
             contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-bug" aria-hidden="true"></i> Детали сбоя</h3>`;
             if (testRun.failedStep) {
-                const failedStepDuration = testRun.failedStep.stepDurationMillis ? `${(testRun.failedStep.stepDurationMillis / 1000).toFixed(2)} сек` : 'N/A';
-                contentHtml += `
+                 contentHtml += `
                     <div class="failure-subsection">
                         <h4>Проваленный шаг</h4>
-                        <p><strong>Номер шага:</strong> ${escapeHtml(testRun.failedStep.stepNumber || 'N/A')}</p>
                         <p><strong>Действие:</strong> ${escapeHtml(testRun.failedStep.action || 'N/A')}</p>
                         <p><strong>Локатор:</strong> ${escapeHtml(testRun.failedStep.locatorStrategy || 'N/A')} = ${escapeHtml(testRun.failedStep.locatorValue || 'N/A')}</p>
-                        ${testRun.failedStep.interactedText ? `<p><strong>Взаимодействовали с текстом:</strong> ${escapeHtml(testRun.failedStep.interactedText)}</p>` : ''}
-                        <p><strong>Результат:</strong> <span class="status-badge status-${testRun.failedStep.result ? testRun.failedStep.result.toLowerCase() : 'unknown'}">${escapeHtml(testRun.failedStep.result || 'N/A')}</span></p>
                         ${testRun.failedStep.confidenceScore !== undefined ? `<p><strong>Уверенность AI:</strong> ${(testRun.failedStep.confidenceScore * 100).toFixed(0)}%</p>` : ''}
                         ${testRun.failedStep.errorMessage ? `<p><strong>Сообщение об ошибке:</strong> ${escapeHtml(testRun.failedStep.errorMessage)}</p>` : ''}
-                        <p><strong>Длительность шага:</strong> ${escapeHtml(failedStepDuration)}</p>
-                        ${testRun.failedStep.additionalStepData ? `<p><strong>Доп. данные шага:</strong></p><pre class="raw-data-block">${escapeHtml(testRun.failedStep.additionalStepData)}</pre>` : ''}
                     </div>`;
             }
             if (testRun.exceptionType || testRun.exceptionMessage || testRun.stackTrace) {
-                contentHtml += `<div class="failure-subsection"><h4>Исключение</h4>`;
+                contentHtml += `<div class="failure-subsection">`;
                 if (testRun.exceptionType) contentHtml += `<p><strong>Тип исключения:</strong> ${escapeHtml(testRun.exceptionType)}</p>`;
                 if (testRun.exceptionMessage) contentHtml += `<p><strong>Сообщение:</strong> ${escapeHtml(testRun.exceptionMessage)}</p>`;
                 if (testRun.stackTrace) contentHtml += `<p><strong>Стек-трейс:</strong></p><pre class="error-pre">${escapeHtml(testRun.stackTrace)}</pre>`;
@@ -543,102 +468,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="detail-block">
                     <h3><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Путь выполнения</h3>
                     <ul class="execution-path-visualizer">`;
+
             testRun.executionPath.forEach((step, index) => {
-                const statusClass = `step-${step.result ? step.result.toLowerCase() : 'unknown'}`;
-                const confidence = step.confidenceScore !== undefined ? `Уверенность: ${(step.confidenceScore * 100).toFixed(0)}%` : 'Уверенность: N/A';
+                const status = (step.result || 'unknown').toLowerCase();
+                const statusClass = `step-${status}`;
+
+                const confidence = step.confidenceScore !== undefined ? `Уверенность: ${(step.confidenceScore * 100).toFixed(0)}%` : '';
                 const stepDuration = step.stepDurationMillis ? `Длительность: ${(step.stepDurationMillis / 1000).toFixed(2)} сек` : '';
-                const stepStartTime = step.stepStartTime ? `Начало: ${formatDateTime(new Date(step.stepStartTime))}` : '';
-                const stepEndTime = step.stepEndTime ? `Конец: ${formatDateTime(new Date(step.stepEndTime))}` : '';
 
                 contentHtml += `
                     <li class="${statusClass}">
                         <div class="step-header">
                             <strong>Шаг ${index + 1}:</strong> ${escapeHtml(step.action || 'Неизвестное действие')}
-                            <span class="step-status status-badge status-${step.result ? step.result.toLowerCase() : 'unknown'}">${escapeHtml(step.result || 'N/A')}</span>
+                            <span class="step-status status-badge status-${status}">${escapeHtml(step.result || 'N/A')}</span>
                         </div>
                         <div class="step-details">
                             <p><strong>Локатор:</strong> ${escapeHtml(step.locatorStrategy || 'N/A')} = ${escapeHtml(step.locatorValue || 'N/A')}</p>
                             ${step.interactedText ? `<p><strong>Взаимодействовали с текстом:</strong> ${escapeHtml(step.interactedText)}</p>` : ''}
-                            <p>${confidence}</p>
+                            ${confidence ? `<p>${confidence}</p>` : ''}
                             ${step.errorMessage ? `<p class="step-error-message"><strong>Ошибка:</strong> ${escapeHtml(step.errorMessage)}</p>` : ''}
-                            <p>${stepStartTime} ${stepEndTime} ${stepDuration}</p>
-                            ${step.additionalStepData ? `<p><strong>Доп. данные:</strong></p><pre class="raw-data-block">${escapeHtml(step.additionalStepData)}</pre>` : ''}
+                            ${stepDuration ? `<p>${stepDuration}</p>` : ''}
                         </div>
                     </li>`;
             });
+
             contentHtml += `</ul></div>`;
         }
 
         DOM_ELEMENTS.rightPanelContent.innerHTML = contentHtml;
     }
 
-    /**
-     * Инициализирует IntersectionObserver для sticky заголовков в правой панели.
-     */
-    function initializeStickyHeaders() {
-        DOM_ELEMENTS.detailBlockHeaders = DOM_ELEMENTS.rightPanelContent.querySelectorAll('.detail-block h3');
-
-        // Отключаем предыдущий observer, если он есть
-        if (stickyHeaderObserver) {
-            stickyHeaderObserver.disconnect();
-        }
-
-        // Если заголовков нет или это мобильный вид, не инициализируем observer
-        if (!DOM_ELEMENTS.detailBlockHeaders.length || window.innerWidth < 992) {
-            return;
-        }
-
-        const options = {
-            root: DOM_ELEMENTS.rightPanelContent, // Контейнер прокрутки
-            rootMargin: '0px 0px 0px 0px', // Наблюдаем за пересечением с 0px от верхнего края
-            threshold: [0, 1] // Наблюдаем, когда элемент входит/выходит из видимости
-        };
-
-        stickyHeaderObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const header = entry.target;
-                // Проверяем, прилип ли заголовок.
-                // intersectionRatio < 1 означает, что элемент частично невидим (скорее всего, прилип).
-                // boundingClientRect.top <= 0 означает, что элемент достиг или пересек верхний край root.
-                if (entry.intersectionRatio < 1 && entry.boundingClientRect.top <= 0) {
-                    header.classList.add('is-sticky');
-                } else {
-                    header.classList.remove('is-sticky');
-                }
-            });
-        }, options);
-
-        DOM_ELEMENTS.detailBlockHeaders.forEach(header => {
-            stickyHeaderObserver.observe(header);
-        });
-        console.log('Sticky headers initialized with IntersectionObserver.');
-    }
-
-
-    /**
-     * Submits feedback for an AI analysis result.
-     * Uses event delegation for feedback buttons.
-     * @param {string} analysisId - The ID of the analysis result.
-     * @param {boolean} isCorrect - True if feedback is positive, false otherwise.
-     * @param {HTMLElement} buttonContainer - The parent element of the feedback buttons to hide.
-     */
     async function submitFeedback(analysisId, isCorrect, buttonContainer) {
         try {
             const response = await fetch(API_ENDPOINTS.feedback(analysisId), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    correct: isCorrect,
-                    userComment: "Feedback from UI",
-                    username: "demo-user" // Consider making this dynamic if user auth exists
-                })
+                body: JSON.stringify({ isAiSuggestionCorrect: isCorrect })
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`Server responded with status ${response.status}: ${errorText}`);
-                throw new Error(`Сервер ответил со статусом ${response.status}.`);
-            }
+            if (!response.ok) throw new Error(`Server responded with status ${response.status}.`);
 
             showToast(UI_MESSAGES.feedbackSuccess, 'success');
             if (buttonContainer) {
@@ -646,154 +514,188 @@ document.addEventListener('DOMContentLoaded', () => {
                 const submittedMsg = buttonContainer.nextElementSibling;
                 if (submittedMsg) submittedMsg.style.display = 'block';
             }
-            console.log(`Feedback for analysis ${analysisId} submitted.`);
-
         } catch (error) {
             console.error('Error submitting feedback:', error);
-            showToast(`${UI_MESSAGES.feedbackError} ${escapeHtml(error.message)}`, 'error');
+            showToast(UI_MESSAGES.feedbackError, 'error');
         }
     }
 
-    /**
-     * Attaches event listeners to test row clicks and keydowns.
-     */
     function initializeTestRowClickListeners() {
-        DOM_ELEMENTS.testRows.forEach(row => {
-            row.addEventListener('click', () => {
+        DOM_ELEMENTS.testListTableBody.addEventListener('click', (event) => {
+            const row = event.target.closest('.test-row');
+            if (row) {
                 loadTestDetails(row.dataset.id, row);
-            });
-            row.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault(); // Prevent default scroll for space
-                    loadTestDetails(row.dataset.id, row);
-                }
-            });
+            }
         });
 
-        // Event delegation for feedback buttons inside rightPanelContent
-        DOM_ELEMENTS.rightPanelContent.addEventListener('click', event => {
-            const button = event.target.closest('.feedback-btn');
-            if (button) {
-                const feedbackSection = button.closest('.feedback-section');
-                if (feedbackSection) {
-                    const analysisId = feedbackSection.dataset.analysisId;
-                    const isCorrect = button.dataset.correct === 'true';
-                    submitFeedback(analysisId, isCorrect, button.parentElement);
-                }
+        DOM_ELEMENTS.testListTableBody.addEventListener('keydown', (event) => {
+            const row = event.target.closest('.test-row');
+            if (row && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                loadTestDetails(row.dataset.id, row);
             }
         });
     }
 
-    /**
-     * Loads details for the first test run when the page loads.
-     */
     function loadInitialTestDetails() {
-        const firstTestRow = DOM_ELEMENTS.testRows[0];
-        if (firstTestRow) {
-            loadTestDetails(firstTestRow.dataset.id, firstTestRow);
+        const savedTestId = localStorage.getItem('selectedTestId');
+        let rowToSelect = document.querySelector(`.test-row[data-id="${savedTestId}"]`) || document.querySelector('.test-row');
+
+        if (rowToSelect) {
+            loadTestDetails(rowToSelect.dataset.id, rowToSelect);
         } else {
-            DOM_ELEMENTS.rightPanelContent.innerHTML = `<div class="placeholder-content">
-                <i class="fa-regular fa-hand-pointer placeholder-icon" aria-hidden="true"></i>
-                <p>${UI_MESSAGES.selectTestRun}</p>
-            </div>`;
+            DOM_ELEMENTS.rightPanelContent.innerHTML = `<div class="placeholder-content"><i class="fa-regular fa-hand-pointer placeholder-icon"></i><p>${UI_MESSAGES.selectTestRun}</p></div>`;
             console.log('No test runs found to load initial details.');
         }
     }
 
-    /**
-     * Sets up tab switching functionality.
-     */
     function initializeTabSwitching() {
         DOM_ELEMENTS.tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const targetTabId = button.dataset.tab;
+                localStorage.setItem('activeTabId', targetTabId);
 
-                DOM_ELEMENTS.tabButtons.forEach(btn => {
-                    btn.classList.remove('active');
-                    btn.setAttribute('aria-selected', 'false');
-                });
+                DOM_ELEMENTS.tabButtons.forEach(btn => btn.classList.remove('active'));
                 DOM_ELEMENTS.tabContents.forEach(content => content.classList.remove('active'));
 
                 button.classList.add('active');
-                button.setAttribute('aria-selected', 'true');
                 document.getElementById(`${targetTabId}TabContent`).classList.add('active');
 
-                // Resize charts when the widgets tab becomes active
                 if (targetTabId === 'widgets') {
-                    // Use requestAnimationFrame to ensure canvas is fully visible before resizing
                     requestAnimationFrame(() => {
                         if (passRateChart) passRateChart.resize();
                         if (slowTestsChart) slowTestsChart.resize();
-                        console.log('Charts resized.');
                     });
                 }
             });
         });
     }
 
-    /**
-     * Displays a toast notification.
-     * @param {string} message - The message to display.
-     * @param {'success' | 'error'} type - The type of toast (success or error).
-     */
-    function showToast(message, type = 'success') {
-        if (!DOM_ELEMENTS.toastContainer) {
-            console.warn('Toast container not found. Cannot show toast.');
-            return;
+    function prependNewTestRow(dto) {
+        const statusIcons = {
+            'PASSED': 'fa-solid fa-circle-check status-icon success-icon',
+            'FAILED': 'fa-solid fa-circle-xmark status-icon failure-icon',
+            'SKIPPED': 'fa-solid fa-circle-minus status-icon skipped-icon',
+            'BROKEN': 'fa-solid fa-circle-exclamation status-icon skipped-icon'
+        };
+
+        const newRow = document.createElement('tr');
+        newRow.className = 'test-row';
+        newRow.dataset.id = dto.id;
+        newRow.tabIndex = 0;
+        newRow.setAttribute('aria-label', `Просмотреть детали запуска теста: ${dto.testMethod} со статусом ${dto.status}`);
+
+        newRow.innerHTML = `
+            <td>
+                <span class="status-indicator">
+                    <i class="${statusIcons[dto.status] || 'fa-solid fa-circle-question'}" title="${dto.status}"></i>
+                </span>
+            </td>
+            <td class="test-method-cell">${escapeHtml(dto.testMethod)}</td>
+            <td>
+                <span class="badge badge-env">${escapeHtml(dto.configuration?.environment || 'N/A')}</span>
+            </td>
+            <td>${escapeHtml(dto.configuration?.appVersion || 'N/A')}</td>
+            <td class="test-run-time-cell" data-timestamp="${dto.timestamp}"></td>
+        `;
+
+        DOM_ELEMENTS.testListTableBody.prepend(newRow);
+        formatTestRunTimes();
+    }
+
+    function initializeHeaderActions() {
+        const deleteAllBtn = document.getElementById('deleteAllDataBtn');
+        if (deleteAllBtn) {
+            deleteAllBtn.addEventListener('click', async () => {
+                if (confirm('Вы уверены, что хотите удалить все данные о запусках? Это действие необратимо.')) {
+                    try {
+                        const response = await fetch(API_ENDPOINTS.deleteAll, { method: 'DELETE' });
+                        if (response.ok) {
+                            testDetailsCache.clear();
+                            showToast('Все данные успешно удалены. Страница будет перезагружена.', 'success');
+                            setTimeout(() => {
+                                localStorage.removeItem('selectedTestId');
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                           throw new Error('Server error on delete.');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting all data:', error);
+                        showToast('Ошибка при удалении данных.', 'error');
+                    }
+                }
+            });
         }
 
+        const createDemoBtn = document.getElementById('createDemoBtn');
+        if(createDemoBtn) {
+            createDemoBtn.addEventListener('click', async () => {
+                createDemoBtn.disabled = true;
+
+                try {
+                    const response = await fetch(API_ENDPOINTS.createDemo, { method: 'POST' });
+                    if (!response.ok) throw new Error('Server error during demo creation.');
+
+                    const newTestRunDetails = await response.json();
+
+                    testDetailsCache.set(newTestRunDetails.id, newTestRunDetails);
+                    console.log(`Proactively cached new demo test run: ${newTestRunDetails.id}`);
+
+                    prependNewTestRow(newTestRunDetails);
+
+                    const newRow = document.querySelector(`.test-row[data-id="${newTestRunDetails.id}"]`);
+                    if(newRow) {
+                        loadTestDetails(newTestRunDetails.id, newRow);
+                    }
+
+                    loadStatistics();
+
+                    showToast('Демо-запись успешно создана', 'success');
+
+                } catch (error) {
+                    console.error("Failed to create demo record:", error);
+                    showToast('Ошибка при создании демо-записи.', 'error');
+                } finally {
+                    createDemoBtn.disabled = false;
+                }
+            });
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        if (!DOM_ELEMENTS.toastContainer) return;
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        toast.setAttribute('role', type === 'error' ? 'alert' : 'status'); // Accessibility role
-        const iconClass = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
-        toast.innerHTML = `<i class="fa-solid ${iconClass}" aria-hidden="true"></i> ${escapeHtml(message)}`;
+        if (type === 'info') toast.style.backgroundColor = '#2196F3';
+
+        const iconClass = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info');
+        toast.innerHTML = `<i class="fa-solid ${iconClass}"></i> ${escapeHtml(message)}`;
         DOM_ELEMENTS.toastContainer.appendChild(toast);
 
-        // Animate in
         setTimeout(() => toast.classList.add('show'), 10);
-
-        // Animate out and remove
         setTimeout(() => {
             toast.classList.remove('show');
             toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-        }, 5000); // Display for 5 seconds
+        }, 5000);
     }
 
-    /**
-     * Escapes HTML entities in a string to prevent XSS.
-     * @param {string} unsafe - The string to escape.
-     * @returns {string} The escaped string.
-     */
     function escapeHtml(unsafe) {
-        if (typeof unsafe !== 'string') {
-            return unsafe; // Return as is if not a string
-        }
+        if (typeof unsafe !== 'string') return unsafe;
         const div = document.createElement('div');
         div.appendChild(document.createTextNode(unsafe));
         return div.innerHTML;
     }
 
-    /**
-     * Formats a date string into "dd.mm.yyyy hh:mm:ss" format.
-     * @param {string} dateString The date string to format (e.g., ISO 8601).
-     * @returns {string} The formatted date string.
-     */
     function formatDateTime(dateString) {
+        if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) {
-            return dateString; // Return original string if invalid date
-        }
-
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-        const year = date.getFullYear();
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-
-        return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+        if (isNaN(date.getTime())) return dateString;
+        return date.toLocaleString('ru-RU', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        }).replace(',', '');
     }
 
-    // --- Start the dashboard ---
     initDashboard();
 });

@@ -23,16 +23,11 @@ public class AnalysisResult {
     private TestRun testRun;
     private String analysisType;
     @Column(length = 2000)
-    private String rootCause;
-    private Double confidenceScore;
-    @Column(length = 4000)
-    private String suggestedSolution;
-    private LocalDateTime analysisTimestamp;
-    @Column(length = 2000)
     private String suggestedReason;
-    @Column(length = 2000)
+    @Column(length = 4000)
     private String solution;
     private Double aiConfidence;
+    private LocalDateTime analysisTimestamp;
     @Column(length = 4000)
     private String rawData;
     private Boolean userConfirmedCorrect;

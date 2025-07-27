@@ -34,7 +34,7 @@ public class TestRun {
     private LocalDateTime timestamp;
     @Enumerated(EnumType.STRING)
     private TestStatus status;
-    @Column(length = 2000)
+    @Column(length = 255)
     private String exceptionType;
     @Column(length = 2000)
     private String exceptionMessage;
@@ -49,7 +49,7 @@ public class TestRun {
             @AttributeOverride(name = "result", column = @Column(name = "failed_step_result")),
             @AttributeOverride(name = "stepNumber", column = @Column(name = "failed_step_number")),
             @AttributeOverride(name = "interactedText", column = @Column(name = "failed_step_interacted_text")),
-            @AttributeOverride(name = "errorMessage", column = @Column(name = "failed_step_error_message")),
+            @AttributeOverride(name = "errorMessage", column = @Column(name = "failed_step_error_message", length = 1000)),
             @AttributeOverride(name = "stepStartTime", column = @Column(name = "failed_step_start_time")),
             @AttributeOverride(name = "stepEndTime", column = @Column(name = "failed_step_end_time")),
             @AttributeOverride(name = "stepDurationMillis", column = @Column(name = "failed_step_duration_millis")),
@@ -68,27 +68,8 @@ public class TestRun {
     @Column(name = "tag_name")
     private List<String> testTags = new ArrayList<>();
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "name", column = @Column(name = "env_name")),
-            @AttributeOverride(name = "osType", column = @Column(name = "env_os_type")),
-            @AttributeOverride(name = "osVersion", column = @Column(name = "env_os_version")),
-            @AttributeOverride(name = "browserType", column = @Column(name = "env_browser_type")),
-            @AttributeOverride(name = "browserVersion", column = @Column(name = "env_browser_version")),
-            @AttributeOverride(name = "screenResolution", column = @Column(name = "env_screen_resolution")),
-            @AttributeOverride(name = "deviceType", column = @Column(name = "env_device_type")),
-            @AttributeOverride(name = "deviceName", column = @Column(name = "env_device_name")),
-            @AttributeOverride(name = "driverVersion", column = @Column(name = "env_driver_version")),
-            @AttributeOverride(name = "appBaseUrl", column = @Column(name = "env_app_base_url", length = 512))
-    })
     private EnvironmentDetailsDTO environmentDetails;
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "screenshotUrls", column = @Column(name = "artifact_screenshot_urls", length = 1000)),
-            @AttributeOverride(name = "videoUrl", column = @Column(name = "artifact_video_url", length = 512)),
-            @AttributeOverride(name = "appLogUrls", column = @Column(name = "artifact_app_log_urls", length = 1000)),
-            @AttributeOverride(name = "browserConsoleLogUrl", column = @Column(name = "artifact_browser_console_log_url", length = 512)),
-            @AttributeOverride(name = "harFileUrl", column = @Column(name = "artifact_har_file_url", length = 512))
-    })
     private TestArtifactsDTO artifacts;
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "test_run_custom_metadata", joinColumns = @JoinColumn(name = "test_run_id"))

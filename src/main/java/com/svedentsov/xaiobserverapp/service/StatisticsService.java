@@ -4,6 +4,8 @@ import com.svedentsov.xaiobserverapp.dto.StatisticsDTO;
 import com.svedentsov.xaiobserverapp.model.TestRun;
 import com.svedentsov.xaiobserverapp.repository.TestRunRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StatisticsService {
@@ -24,6 +27,7 @@ public class StatisticsService {
     @Transactional(readOnly = true)
     @Cacheable("statistics")
     public StatisticsDTO getOverallStatistics() {
+        log.info("Calculating new statistics (cache miss).");
         List<TestRun> allRuns = testRunRepository.findAll();
         long total = allRuns.size();
         if (total == 0) {
@@ -32,7 +36,7 @@ public class StatisticsService {
 
         long passed = allRuns.stream().filter(r -> r.getStatus() == TestRun.TestStatus.PASSED).count();
         long failed = allRuns.stream().filter(r -> r.getStatus() == TestRun.TestStatus.FAILED).count();
-        long skipped = total - passed - failed;
+        long skipped = allRuns.stream().filter(r -> r.getStatus() == TestRun.TestStatus.SKIPPED || r.getStatus() == TestRun.TestStatus.BROKEN).count();
         double passRate = (total > 0) ? (double) passed / total * 100.0 : 0.0;
 
         Map<String, Long> failingTests = testRunRepository.findTopFailingTests().stream()
@@ -46,6 +50,11 @@ public class StatisticsService {
         List<StatisticsDTO.DailyTrendData> dailyPassRateTrend = calculateDailyPassRateTrend(allRuns, 30);
         List<StatisticsDTO.SlowTestDTO> topSlowTests = calculateTopSlowTests(allRuns, 5);
         return new StatisticsDTO(total, passed, failed, skipped, passRate, failingTests, dailyPassRateTrend, topSlowTests);
+    }
+
+    @CacheEvict(value = "statistics", allEntries = true)
+    public void clearStatisticsCache() {
+        log.info("Statistics cache has been cleared.");
     }
 
     private List<StatisticsDTO.DailyTrendData> calculateDailyPassRateTrend(List<TestRun> allRuns, int days) {
@@ -72,20 +81,10 @@ public class StatisticsService {
 
     private List<StatisticsDTO.SlowTestDTO> calculateTopSlowTests(List<TestRun> allRuns, int limit) {
         return allRuns.stream()
-                .map(run -> {
-                    long dummyDuration = 0;
-                    if (run.getStatus() == TestRun.TestStatus.PASSED) {
-                        dummyDuration = (long) (Math.random() * 1000 + 500); // 0.5с - 1.5с
-                    } else if (run.getStatus() == TestRun.TestStatus.FAILED) {
-                        dummyDuration = (long) (Math.random() * 5000 + 2000); // 2с - 7с
-                    }
-                    return new StatisticsDTO.SlowTestDTO(
-                            String.format("%s.%s", run.getTestClass(), run.getTestMethod()),
-                            dummyDuration
-                    );
-                })
-                .collect(Collectors.groupingBy(StatisticsDTO.SlowTestDTO::getTestName,
-                        Collectors.averagingDouble(StatisticsDTO.SlowTestDTO::getAverageDurationMillis)))
+                .filter(run -> run.getTestMethod() != null && !run.getTestMethod().isEmpty())
+                .collect(Collectors.groupingBy(
+                        run -> String.format("%s.%s", run.getTestClass(), run.getTestMethod()),
+                        Collectors.averagingLong(TestRun::getDurationMillis)))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue(Comparator.reverseOrder()))
                 .limit(limit)

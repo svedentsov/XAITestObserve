@@ -18,11 +18,10 @@
             <h1 class="header-title-text">Панель Анализа Тестов</h1>
         </div>
         <div class="header-actions">
-            <form th:action="@{/demo/create}" method="post" class="create-demo-form-header">
-                <button type="submit" class="btn btn-primary" aria-label="Создать новый демо-запуск теста">
-                    <i class="fa-solid fa-plus" aria-hidden="true"></i> Создать демо
-                </button>
-            </form>
+            <button id="deleteAllDataBtn" class="btn btn-danger">Удалить все данные</button>
+            <button id="createDemoBtn" class="btn btn-primary" aria-label="Создать новый демо-запуск теста">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Создать демо
+            </button>
         </div>
     </div>
 </header>
@@ -46,10 +45,10 @@
                                 <th scope="col" class="status-header"></th> <th scope="col">Метод Теста</th>
                                 <th scope="col">Окружение</th>
                                 <th scope="col">Версия</th>
-                                <th scope="col">Время Запуска</th>
+                                <th scope="col">Время запуска</th>
                             </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="testListTableBody" th:fragment="testListBody">
                             <tr th:each="run : ${testRuns}" class="test-row" th:data-id="${run.id}" tabindex="0"
                                 aria-label="Просмотреть детали запуска теста: [[${run.testMethod}]] со статусом [[${run.status.name()}]]">
                                 <td> <span th:switch="${run.status.name()}" class="status-indicator">
@@ -59,6 +58,8 @@
                                            title="Провал" aria-label="Тест провален"></i>
                                         <i th:case="'SKIPPED'" class="fa-solid fa-circle-minus status-icon skipped-icon"
                                            title="Пропущен" aria-label="Тест пропущен"></i>
+                                        <i th:case="'BROKEN'" class="fa-solid fa-circle-exclamation status-icon skipped-icon"
+                                           title="Сломан" aria-label="Тест сломан"></i>
                                     </span>
                                 </td>
                                 <td class="test-method-cell" th:text="${run.testMethod}"></td>
@@ -66,7 +67,8 @@
                                     <span class="badge badge-env" th:text="${run.configuration?.environment ?: 'N/A'}"></span>
                                 </td>
                                 <td th:text="${run.configuration?.appVersion ?: 'N/A'}"></td>
-                                <td th:text="${#temporals.format(run.timestamp, 'yyyy.MM.dd HH:mm:ss')}"></td> </tr>
+                                <td class="test-run-time-cell" th:data-timestamp="${run.timestamp}"></td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
