@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class TestRunDetailDTO {
@@ -23,4 +24,8 @@ public class TestRunDetailDTO {
     private LocalDateTime endTime;
     private long durationMillis;
     private String exceptionMessage;
+    private EnvironmentDetailsDTO environmentDetails;
+    private TestArtifactsDTO artifacts;
+    private List<String> testTags;
+    private Map<String, String> customMetadata;
 }

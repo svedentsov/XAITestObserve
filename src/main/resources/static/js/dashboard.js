@@ -34,6 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
         errorState: 'Произошла ошибка.'
     };
 
+    const METADATA_LABELS = {
+        buildNumber: 'Номер сборки',
+        jenkinsJobUrl: 'Сборка в Jenkins',
+        jiraTicket: 'Задача в Jira',
+        gitBranch: 'Ветка Git',
+        commitHash: 'Хеш коммита',
+        triggeredBy: 'Кем запущено'
+    };
+
     let passRateChart = null;
     let slowTestsChart = null;
     const testDetailsCache = new Map();
@@ -144,44 +153,38 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderStatistics(stats) {
         const totalRunsEl = document.getElementById('stats-total-runs');
 
-        if (!totalRunsEl) {
-            let topFailingTestsContentHtml = `<p class="no-data-message">${UI_MESSAGES.noDataFailure}</p>`;
-            if (stats.failureCountByTest && Object.keys(stats.failureCountByTest).length > 0) {
-                topFailingTestsContentHtml = '<ul>';
-                for (const [testName, count] of Object.entries(stats.failureCountByTest)) {
-                    topFailingTestsContentHtml += `<li><span>${escapeHtml(testName)}</span> <strong>${count}</strong></li>`;
-                }
-                topFailingTestsContentHtml += '</ul>';
-            }
+        // --- ИЗМЕНЕНИЕ: Удалена карточка "Пропущено" ---
+        const statsHtml = `
+            <div class="stats-grid">
+                <div class="stats-card"><h4>Прогоны</h4><p id="stats-total-runs">${stats.totalRuns || 0}</p></div>
+                <div class="stats-card"><h4>Pass Rate</h4><p id="stats-pass-rate">${(stats.passRate || 0).toFixed(1)}%</p></div>
+                <div class="stats-card status-passed"><h4>Прошли</h4><p id="stats-passed-runs">${stats.passedRuns || 0}</p></div>
+                <div class="stats-card status-failed"><h4>Упали</h4><p id="stats-failed-runs">${stats.failedRuns || 0}</p></div>
+            </div>
+            <div class="failing-tests-card">
+                <h4>Топ нестабильных тестов</h4>
+                <div class="content" id="top-failing-tests-content"></div>
+            </div>
+        `;
 
-            DOM_ELEMENTS.statsContainer.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stats-card"><h4>Прогоны</h4><p id="stats-total-runs">${stats.totalRuns || 0}</p></div>
-                    <div class="stats-card"><h4>Pass Rate</h4><p id="stats-pass-rate">${(stats.passRate || 0).toFixed(1)}%</p></div>
-                    <div class="stats-card status-passed"><h4>Прошли</h4><p id="stats-passed-runs">${stats.passedRuns || 0}</p></div>
-                    <div class="stats-card status-failed"><h4>Упали</h4><p id="stats-failed-runs">${stats.failedRuns || 0}</p></div>
-                </div>
-                <div class="failing-tests-card">
-                    <h4>Топ нестабильных тестов</h4>
-                    <div class="content" id="top-failing-tests-content">${topFailingTestsContentHtml}</div>
-                </div>
-            `;
+        if (!totalRunsEl || DOM_ELEMENTS.statsContainer.innerHTML.includes('loading-message')) {
+            DOM_ELEMENTS.statsContainer.innerHTML = statsHtml;
         } else {
             document.getElementById('stats-total-runs').textContent = stats.totalRuns || 0;
             document.getElementById('stats-pass-rate').textContent = `${(stats.passRate || 0).toFixed(1)}%`;
             document.getElementById('stats-passed-runs').textContent = stats.passedRuns || 0;
             document.getElementById('stats-failed-runs').textContent = stats.failedRuns || 0;
-
-            let topFailingTestsContentHtml = `<p class="no-data-message">${UI_MESSAGES.noDataFailure}</p>`;
-            if (stats.failureCountByTest && Object.keys(stats.failureCountByTest).length > 0) {
-                topFailingTestsContentHtml = '<ul>';
-                for (const [testName, count] of Object.entries(stats.failureCountByTest)) {
-                    topFailingTestsContentHtml += `<li><span>${escapeHtml(testName)}</span> <strong>${count}</strong></li>`;
-                }
-                topFailingTestsContentHtml += '</ul>';
-            }
-            document.getElementById('top-failing-tests-content').innerHTML = topFailingTestsContentHtml;
         }
+
+        let topFailingTestsContentHtml = `<p class="no-data-message">${UI_MESSAGES.noDataFailure}</p>`;
+        if (stats.failureCountByTest && Object.keys(stats.failureCountByTest).length > 0) {
+            topFailingTestsContentHtml = '<ul>';
+            for (const [testName, count] of Object.entries(stats.failureCountByTest)) {
+                topFailingTestsContentHtml += `<li><span>${escapeHtml(testName)}</span> <strong>${count}</strong></li>`;
+            }
+            topFailingTestsContentHtml += '</ul>';
+        }
+        document.getElementById('top-failing-tests-content').innerHTML = topFailingTestsContentHtml;
     }
 
     function renderPassRateChart(trendData) {
@@ -314,11 +317,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTestDetails(testRun) {
         const durationSeconds = testRun.durationMillis ? (testRun.durationMillis / 1000).toFixed(2) : 'N/A';
+        let contentHtml = ``;
 
-        let contentHtml = `
+        // --- Run Info ---
+        contentHtml += `
             <div class="detail-block">
                 <h3><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Информация о запуске</h3>
-                <div class="info-grid run-info-grid">
+                <div class="info-grid-3col">
                     <p><strong>ID:</strong> ${escapeHtml(testRun.id)}</p>
                     <p><strong>Статус:</strong> <span class="status-badge status-${testRun.status.toLowerCase()}">${escapeHtml(testRun.status)}</span></p>
                     <p><strong>Класс:</strong> ${escapeHtml(testRun.testClass || 'N/A')}</p>
@@ -331,32 +336,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>`;
 
+        // --- Environment Details ---
         if (testRun.environmentDetails) {
             const env = testRun.environmentDetails;
             contentHtml += `
                 <div class="detail-block">
                     <h3><i class="fa-solid fa-desktop" aria-hidden="true"></i> Детали окружения</h3>
-                    <div class="info-grid">
+                    <div class="info-grid-3col">
                         <p><strong>Имя:</strong> ${escapeHtml(env.name || 'N/A')}</p>
                         <p><strong>ОС:</strong> ${escapeHtml(env.osType || 'N/A')} ${escapeHtml(env.osVersion || '')}</p>
                         <p><strong>Браузер:</strong> ${escapeHtml(env.browserType || 'N/A')} ${escapeHtml(env.browserVersion || '')}</p>
                         <p><strong>Разрешение:</strong> ${escapeHtml(env.screenResolution || 'N/A')}</p>
                         <p><strong>Устройство:</strong> ${escapeHtml(env.deviceType || 'N/A')}</p>
                         ${env.deviceName ? `<p><strong>Имя устройства:</strong> ${escapeHtml(env.deviceName)}</p>` : ''}
+                        <p><strong>Версия драйвера:</strong> ${escapeHtml(env.driverVersion || 'N/A')}</p>
+                        <p><strong>URL приложения:</strong> ${escapeHtml(env.appBaseUrl || 'N/A')}</p>
                     </div>
                 </div>`;
         }
 
-        if (testRun.testTags && testRun.testTags.length > 0) {
-            contentHtml += `
-                <div class="detail-block">
-                    <h3><i class="fa-solid fa-tags" aria-hidden="true"></i> Теги</h3>
-                    <div class="tags-container">
-                        ${testRun.testTags.map(tag => `<span class="test-tag">${escapeHtml(tag)}</span>`).join('')}
-                    </div>
-                </div>`;
+        // --- Custom Metadata ---
+        if (testRun.customMetadata && Object.keys(testRun.customMetadata).length > 0) {
+            contentHtml += '<div class="detail-block"><h3><i class="fa-solid fa-cogs"></i> Дополнительные данные</h3><div class="info-grid-3col">';
+            for (const [key, value] of Object.entries(testRun.customMetadata)) {
+                const label = METADATA_LABELS[key] || escapeHtml(key);
+                if (key === 'jenkinsJobUrl' && value) {
+                    const buildNumber = value.split('/').pop() || 'link';
+                    contentHtml += `<p><strong>${label}:</strong> <a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(buildNumber)}</a></p>`;
+                } else {
+                    contentHtml += `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`;
+                }
+            }
+            contentHtml += '</div></div>';
         }
 
+        // --- AI Analysis ---
         if (testRun.analysisResults && testRun.analysisResults.length > 0) {
             contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-brain" aria-hidden="true"></i> Результаты Анализа AI</h3>`;
             testRun.analysisResults.forEach(result => {
@@ -380,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contentHtml += `</div>`;
         }
 
+        // --- Failure Details ---
         if (testRun.status === 'FAILED') {
             contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-bug" aria-hidden="true"></i> Детали сбоя</h3>`;
             if (testRun.failedStep) {
@@ -393,15 +408,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
             }
             if (testRun.exceptionType || testRun.exceptionMessage || testRun.stackTrace) {
+                const isMessageDuplicate = testRun.failedStep && testRun.failedStep.errorMessage === testRun.exceptionMessage;
                 contentHtml += `<div class="failure-subsection">`;
                 if (testRun.exceptionType) contentHtml += `<p><strong>Тип исключения:</strong> ${escapeHtml(testRun.exceptionType)}</p>`;
-                if (testRun.exceptionMessage) contentHtml += `<p><strong>Сообщение:</strong> ${escapeHtml(testRun.exceptionMessage)}</p>`;
+                if (testRun.exceptionMessage && !isMessageDuplicate) contentHtml += `<p><strong>Сообщение:</strong> ${escapeHtml(testRun.exceptionMessage)}</p>`;
                 if (testRun.stackTrace) contentHtml += `<p><strong>Стек-трейс:</strong></p><pre class="error-pre">${escapeHtml(testRun.stackTrace)}</pre>`;
                 contentHtml += `</div>`;
             }
             contentHtml += `</div>`;
         }
 
+        // --- Execution Path ---
         if (testRun.executionPath && testRun.executionPath.length > 0) {
             contentHtml += `
                 <div class="detail-block">
@@ -412,21 +429,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 const confidence = step.confidenceScore !== undefined ? `Уверенность: ${(step.confidenceScore * 100).toFixed(0)}%` : '';
                 const stepDuration = step.stepDurationMillis ? `Длительность: ${(step.stepDurationMillis / 1000).toFixed(2)} сек` : '';
                 contentHtml += `
-                    <li class="${statusClass}">
-                        <div class="step-header">
-                            <strong>Шаг ${index + 1}:</strong> ${escapeHtml(step.action || 'Неизвестное действие')}
-                            <span class="status-badge status-${statusClass}">${escapeHtml(step.result || 'N/A')}</span>
-                        </div>
-                        <div class="step-details">
-                            <p><strong>Локатор:</strong> ${escapeHtml(step.locatorStrategy || 'N/A')} = ${escapeHtml(step.locatorValue || 'N/A')}</p>
-                            ${step.interactedText ? `<p><strong>Взаимодействовали с текстом:</strong> ${escapeHtml(step.interactedText)}</p>` : ''}
-                            ${confidence ? `<p>${confidence}</p>` : ''}
-                            ${step.errorMessage ? `<p class="step-error-message"><strong>Ошибка:</strong> ${escapeHtml(step.errorMessage)}</p>` : ''}
-                            ${stepDuration ? `<p>${stepDuration}</p>` : ''}
+                    <li class="step-${statusClass}">
+                        <div>
+                            <div class="step-header">
+                                <strong>Шаг ${index + 1}:</strong> ${escapeHtml(step.action || 'Неизвестное действие')}
+                            </div>
+                            <div class="step-details">
+                                <p><strong>Статус:</strong> <span class="status-badge status-${statusClass}">${escapeHtml(step.result || 'N/A')}</span></p>
+                                <p><strong>Локатор:</strong> ${escapeHtml(step.locatorStrategy || 'N/A')} = ${escapeHtml(step.locatorValue || 'N/A')}</p>
+                                ${step.interactedText ? `<p><strong>Взаимодействовали с текстом:</strong> ${escapeHtml(step.interactedText)}</p>` : ''}
+                                ${confidence ? `<p>${confidence}</p>` : ''}
+                                ${step.errorMessage ? `<p class="step-error-message"><strong>Ошибка:</strong> ${escapeHtml(step.errorMessage)}</p>` : ''}
+                                ${stepDuration ? `<p>${stepDuration}</p>` : ''}
+                            </div>
                         </div>
                     </li>`;
             });
             contentHtml += `</ul></div>`;
+        }
+
+        // --- ИЗМЕНЕНИЕ: Блок Теги теперь добавляется здесь, перед Артефактами ---
+        if (testRun.testTags && testRun.testTags.length > 0) {
+            contentHtml += `
+                <div class="detail-block">
+                    <h3><i class="fa-solid fa-tags" aria-hidden="true"></i> Теги</h3>
+                    <div class="tags-container">
+                        ${testRun.testTags.map(tag => `<span class="test-tag">${escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                </div>`;
+        }
+
+        // --- Artifacts ---
+        if (testRun.artifacts && Object.values(testRun.artifacts).some(v => Array.isArray(v) ? v.length > 0 : v)) {
+            contentHtml += '<div class="detail-block"><h3><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Артефакты</h3><div class="artifact-links">';
+            if (testRun.artifacts.screenshotUrls && testRun.artifacts.screenshotUrls.length > 0) {
+                testRun.artifacts.screenshotUrls.forEach((url, index) => {
+                    contentHtml += `<p><i class="fa-solid fa-camera"></i> <a href="${url}" target="_blank" rel="noopener noreferrer">Скриншот ${index + 1}</a></p>`;
+                });
+            }
+            if (testRun.artifacts.videoUrl) {
+                contentHtml += `<p><i class="fa-solid fa-video"></i> <a href="${testRun.artifacts.videoUrl}" target="_blank" rel="noopener noreferrer">Видеозапись теста</a></p>`;
+            }
+            if (testRun.artifacts.appLogUrls && testRun.artifacts.appLogUrls.length > 0) {
+                 testRun.artifacts.appLogUrls.forEach((url, index) => {
+                    contentHtml += `<p><i class="fa-solid fa-file-lines"></i> <a href="${url}" target="_blank" rel="noopener noreferrer">Лог приложения ${index + 1}</a></p>`;
+                 });
+            }
+            if (testRun.artifacts.browserConsoleLogUrl) {
+                contentHtml += `<p><i class="fa-solid fa-terminal"></i> <a href="${testRun.artifacts.browserConsoleLogUrl}" target="_blank" rel="noopener noreferrer">Лог консоли браузера</a></p>`;
+            }
+            if (testRun.artifacts.harFileUrl) {
+                contentHtml += `<p><i class="fa-solid fa-network-wired"></i> <a href="${testRun.artifacts.harFileUrl}" target="_blank" rel="noopener noreferrer">HAR-файл сети</a></p>`;
+            }
+            contentHtml += '</div></div>';
         }
 
         DOM_ELEMENTS.rightPanelContent.innerHTML = contentHtml;
@@ -653,3 +708,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initDashboard();
 });
+

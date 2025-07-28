@@ -31,6 +31,10 @@ public interface TestRunMapper {
     @Mapping(source = "endTime", target = "endTime")
     @Mapping(source = "durationMillis", target = "durationMillis")
     @Mapping(source = "exceptionMessage", target = "exceptionMessage")
+    @Mapping(source = "environmentDetails", target = "environmentDetails")
+    @Mapping(source = "artifacts", target = "artifacts")
+    @Mapping(source = "testTags", target = "testTags")
+    @Mapping(source = "customMetadata", target = "customMetadata")
     TestRunDetailDTO toDetailDto(TestRun entity);
 
     @Named("longToLocalDateTime")

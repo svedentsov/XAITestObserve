@@ -521,6 +521,10 @@ body {
     margin-bottom: var(--spacing-md);
 }
 
+.detail-block h3 > i {
+    color: var(--color-text-secondary);
+}
+
 .detail-block > *:not(h3):first-of-type {
     margin-top: 0;
 }
@@ -549,10 +553,10 @@ body {
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: var(--spacing-sm) var(--spacing-md);
     font-size: 15px;
     margin-bottom: 0;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
 .info-grid p {
@@ -564,6 +568,28 @@ body {
     font-weight: 400;
     margin-right: 5px;
 }
+
+.info-grid-3col {
+    display: grid;
+    gap: 2px var(--spacing-md);
+    font-size: 15px;
+    margin-bottom: 0;
+    grid-template-columns: 1fr;
+}
+.info-grid-3col p {
+    margin: 0;
+}
+@media (min-width: 768px) {
+    .info-grid-3col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (min-width: 1200px) {
+    .info-grid-3col {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 
 .status-badge {
     padding: 4px 10px;
@@ -761,49 +787,21 @@ pre.error-pre {
     padding: 0;
     margin: 0;
     position: relative;
-    margin-top: var(--spacing-md);
-}
-
-.execution-path-visualizer::before {
-    content: '';
-    position: absolute;
-    left: 8px;
-    top: 12px;
-    bottom: 0;
-    width: 2px;
-    background-color: var(--color-border);
-    z-index: 0;
 }
 
 .execution-path-visualizer li {
     position: relative;
-    padding: var(--spacing-xs) 0 var(--spacing-xs) var(--spacing-md);
-    margin-bottom: var(--spacing-sm);
+    padding-left: 0; /* --- ИЗМЕНЕНИЕ: Убран отступ --- */
+    margin-bottom: var(--spacing-lg);
 }
 
 .execution-path-visualizer li:last-child {
     margin-bottom: 0;
 }
 
-.step-icon {
-    position: absolute;
-    left: 0;
-    top: 8px;
-    font-size: 20px;
-    background-color: var(--color-panel-background);
-    padding: 0 2px;
-    border-radius: 50%;
-    color: var(--color-text-secondary);
-    z-index: 1;
-}
-
-.step-passed .step-icon { color: var(--color-success); }
-.step-failed .step-icon { color: var(--color-failure); }
-.step-skipped .step-icon { color: var(--color-skipped); }
-
 .step-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-xs);
 }
@@ -819,11 +817,12 @@ pre.error-pre {
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     font-size: 14px;
-    border: none;
+    border: none; /* --- ИЗМЕНЕНИЕ: Убран бордер --- */
 }
 
 .step-details p {
     margin: 0 0 var(--spacing-xs) 0;
+    word-break: break-all;
 }
 
 .step-details p:last-child {
@@ -857,19 +856,25 @@ pre.error-pre {
     white-space: nowrap;
 }
 
-.custom-metadata-grid {
-}
-
 .artifact-links {
     font-size: 15px;
 }
 
 .artifact-links p {
-    margin: 0 0 var(--spacing-xs) 0;
+    margin: 0 0 var(--spacing-sm) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
 .artifact-links p:last-child {
     margin-bottom: 0;
+}
+
+.artifact-links i {
+    color: var(--color-text-secondary);
+    width: 16px;
+    text-align: center;
 }
 
 .artifact-links a {
@@ -977,7 +982,6 @@ pre.error-pre {
     .failure-subsection,
     .execution-path-visualizer,
     .tags-container,
-    .custom-metadata-grid,
     .artifact-links {
         margin-bottom: 0;
         padding-bottom: 0;
@@ -988,7 +992,6 @@ pre.error-pre {
     .detail-block > :last-child.failure-subsection,
     .detail-block > :last-child.execution-path-visualizer,
     .detail-block > :last-child.tags-container,
-    .detail-block > :last-child.custom-metadata-grid,
     .detail-block > :last-child.artifact-links {
         margin-bottom: 0;
         padding-bottom: 0;
@@ -1102,21 +1105,5 @@ pre.error-pre {
 
     body.show-details-on-mobile .back-to-list-button {
         display: block;
-    }
-}
-
-.run-info-grid {
-    grid-template-columns: 1fr;
-}
-
-@media (min-width: 768px) {
-    .run-info-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1200px) {
-    .run-info-grid {
-        grid-template-columns: repeat(3, 1fr);
     }
 }

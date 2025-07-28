@@ -75,7 +75,18 @@
                 </div>
                 <div id="widgetsTabContent" class="tab-content" role="tabpanel" aria-labelledby="tab-widgets">
                     <div id="stats-container" class="stats-section">
-                        <p class="loading-message">Загрузка статистики...</p>
+                        <div class="stats-grid">
+                            <div class="stats-card"><h4>Прогоны</h4><p id="stats-total-runs">0</p></div>
+                            <div class="stats-card"><h4>Pass Rate</h4><p id="stats-pass-rate">0.0%</p></div>
+                            <div class="stats-card status-passed"><h4>Прошли</h4><p id="stats-passed-runs">0</p></div>
+                            <div class="stats-card status-failed"><h4>Упали</h4><p id="stats-failed-runs">0</p></div>
+                        </div>
+                        <div class="failing-tests-card">
+                            <h4>Топ нестабильных тестов</h4>
+                            <div class="content" id="top-failing-tests-content">
+                                <p class="no-data-message">Нет данных о сбоях.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="graphs-section" class="graphs-section">
