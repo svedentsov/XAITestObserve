@@ -4,6 +4,7 @@ import com.svedentsov.xaiobserverapp.model.TestRun;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,4 +23,8 @@ public interface TestRunRepository extends JpaRepository<TestRun, String> {
             "FROM TestRun tr WHERE tr.status = 'FAILED' " +
             "GROUP BY testName ORDER BY failureCount DESC")
     List<Object[]> findTopFailingTests();
+
+    @EntityGraph(attributePaths = {"configuration", "analysisResults"})
+    @Query("SELECT tr FROM TestRun tr WHERE tr.timestamp >= :startOfDay AND tr.timestamp < :endOfDay")
+    List<TestRun> findByTimestampBetween(@Param("startOfDay") java.time.LocalDateTime startOfDay, @Param("endOfDay") java.time.LocalDateTime endOfDay);
 }

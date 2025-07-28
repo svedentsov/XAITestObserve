@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -30,11 +31,15 @@ public class TestEventOrchestrator {
 
     @Async
     @Transactional
-    public void processAndSaveTestEvent(@Valid FailureEventDTO event) {
+    public CompletableFuture<TestRun> processAndSaveTestEvent(@Valid FailureEventDTO event) {
         log.info("Starting processing test event for run ID: {}", event.getTestRunId());
         TestConfiguration config = testConfigurationService.findOrCreateConfiguration(event);
         TestRun testRun = testRunMapper.toEntity(event);
         testRun.setConfiguration(config);
+        testRun.setEnvironmentDetails(event.getEnvironmentDetails());
+        testRun.setArtifacts(event.getArtifacts());
+        testRun.setCustomMetadata(event.getCustomMetadata());
+        testRun.setTestTags(event.getTestTags());
         List<AnalysisResult> analysisResults = rcaService.analyzeTestRun(event);
         analysisResults.forEach(testRun::addAnalysisResult);
         TestRun savedTestRun = testRunRepository.save(testRun);
@@ -43,5 +48,6 @@ public class TestEventOrchestrator {
             notificationService.notifyAboutFailure(savedTestRun);
         }
         statisticsService.clearStatisticsCache();
+        return CompletableFuture.completedFuture(savedTestRun);
     }
 }

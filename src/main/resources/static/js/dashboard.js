@@ -17,7 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
         feedback: (id) => `/api/v1/analysis/${id}/feedback`,
         deleteAll: '/api/v1/tests/all',
         createDemo: '/demo/create',
-        testListFragment: '/test-list-fragment'
+        testListFragment: '/test-list-fragment',
+        testsToday: '/api/v1/tests/today'
     };
 
     const UI_MESSAGES = {
@@ -41,14 +42,33 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Dashboard initialization started.');
 
         restoreActiveTab();
+        precacheTodaysTests();
         loadStatistics();
         initializeTestRowClickListeners();
         formatTestRunTimes();
         loadInitialTestDetails();
         initializeTabSwitching();
         initializeHeaderActions();
+        initializeFeedbackButtons();
 
         console.log('Dashboard initialization complete.');
+    }
+
+    async function precacheTodaysTests() {
+        console.log('Precaching details for today\'s test runs...');
+        try {
+            const response = await fetch(API_ENDPOINTS.testsToday);
+            if (!response.ok) throw new Error('Failed to fetch today\'s tests');
+            const tests = await response.json();
+            tests.forEach(test => {
+                if (!testDetailsCache.has(test.id)) {
+                    testDetailsCache.set(test.id, test);
+                }
+            });
+            console.log(`Successfully precached ${tests.length} test runs.`);
+        } catch (error) {
+            console.error('Error precaching test details:', error);
+        }
     }
 
     function restoreActiveTab() {
@@ -79,7 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadStatistics() {
-        DOM_ELEMENTS.statsContainer.innerHTML = `<p class="loading-message">${UI_MESSAGES.loadingStats}</p>`;
+        if (!document.getElementById('stats-total-runs')) {
+             DOM_ELEMENTS.statsContainer.innerHTML = `<p class="loading-message">${UI_MESSAGES.loadingStats}</p>`;
+        }
         try {
             const response = await fetch(`${API_ENDPOINTS.statistics}?_=${new Date().getTime()}`);
             if (!response.ok) throw new Error('Failed to fetch statistics');
@@ -93,15 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
             DOM_ELEMENTS.statsContainer.innerHTML = `<p class="loading-message error">Не удалось загрузить статистику.</p>`;
             showToast('Не удалось загрузить статистику.', 'error');
         }
-    }
-
-    async function refreshDashboardData() {
-        console.log('Refreshing all dashboard data...');
-        await Promise.all([
-            loadStatistics(),
-            reloadTestRunList()
-        ]);
-        console.log('Dashboard data refreshed.');
     }
 
     async function reloadTestRunList() {
@@ -121,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedRow.classList.add('selected');
                 }
             }
-
             console.log('Test run list reloaded.');
         } catch (error) {
             console.error('Error reloading test run list:', error);
@@ -130,46 +142,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderStatistics(stats) {
-        const totalRuns = stats.totalRuns || 0;
-        const passRate = stats.passRate ? stats.passRate.toFixed(1) : 0;
-        const passedRuns = stats.passedRuns || 0;
-        const failedRuns = stats.failedRuns || 0;
+        const totalRunsEl = document.getElementById('stats-total-runs');
 
-        let topFailingTestsContentHtml = `<p class="no-data-message">${UI_MESSAGES.noDataFailure}</p>`;
-        if (stats.failureCountByTest && Object.keys(stats.failureCountByTest).length > 0) {
-            topFailingTestsContentHtml = '<ul>';
-            for (const [testName, count] of Object.entries(stats.failureCountByTest)) {
-                topFailingTestsContentHtml += `<li><span>${escapeHtml(testName)}</span> <strong>${count}</strong></li>`;
+        if (!totalRunsEl) {
+            let topFailingTestsContentHtml = `<p class="no-data-message">${UI_MESSAGES.noDataFailure}</p>`;
+            if (stats.failureCountByTest && Object.keys(stats.failureCountByTest).length > 0) {
+                topFailingTestsContentHtml = '<ul>';
+                for (const [testName, count] of Object.entries(stats.failureCountByTest)) {
+                    topFailingTestsContentHtml += `<li><span>${escapeHtml(testName)}</span> <strong>${count}</strong></li>`;
+                }
+                topFailingTestsContentHtml += '</ul>';
             }
-            topFailingTestsContentHtml += '</ul>';
-        }
 
-        DOM_ELEMENTS.statsContainer.innerHTML = `
-            <div class="stats-grid">
-                <div class="stats-card">
-                    <h4>Прогоны</h4>
-                    <p>${totalRuns}</p>
+            DOM_ELEMENTS.statsContainer.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stats-card"><h4>Прогоны</h4><p id="stats-total-runs">${stats.totalRuns || 0}</p></div>
+                    <div class="stats-card"><h4>Pass Rate</h4><p id="stats-pass-rate">${(stats.passRate || 0).toFixed(1)}%</p></div>
+                    <div class="stats-card status-passed"><h4>Прошли</h4><p id="stats-passed-runs">${stats.passedRuns || 0}</p></div>
+                    <div class="stats-card status-failed"><h4>Упали</h4><p id="stats-failed-runs">${stats.failedRuns || 0}</p></div>
                 </div>
-                <div class="stats-card">
-                    <h4>Pass Rate</h4>
-                    <p>${passRate}%</p>
+                <div class="failing-tests-card">
+                    <h4>Топ нестабильных тестов</h4>
+                    <div class="content" id="top-failing-tests-content">${topFailingTestsContentHtml}</div>
                 </div>
-                <div class="stats-card status-passed">
-                    <h4>Прошли</h4>
-                    <p>${passedRuns}</p>
-                </div>
-                <div class="stats-card status-failed">
-                    <h4>Упали</h4>
-                    <p>${failedRuns}</p>
-                </div>
-            </div>
-            <div class="failing-tests-card">
-                <h4>Топ нестабильных тестов</h4>
-                <div class="content">
-                    ${topFailingTestsContentHtml}
-                </div>
-            </div>
-        `;
+            `;
+        } else {
+            document.getElementById('stats-total-runs').textContent = stats.totalRuns || 0;
+            document.getElementById('stats-pass-rate').textContent = `${(stats.passRate || 0).toFixed(1)}%`;
+            document.getElementById('stats-passed-runs').textContent = stats.passedRuns || 0;
+            document.getElementById('stats-failed-runs').textContent = stats.failedRuns || 0;
+
+            let topFailingTestsContentHtml = `<p class="no-data-message">${UI_MESSAGES.noDataFailure}</p>`;
+            if (stats.failureCountByTest && Object.keys(stats.failureCountByTest).length > 0) {
+                topFailingTestsContentHtml = '<ul>';
+                for (const [testName, count] of Object.entries(stats.failureCountByTest)) {
+                    topFailingTestsContentHtml += `<li><span>${escapeHtml(testName)}</span> <strong>${count}</strong></li>`;
+                }
+                topFailingTestsContentHtml += '</ul>';
+            }
+            document.getElementById('top-failing-tests-content').innerHTML = topFailingTestsContentHtml;
+        }
     }
 
     function renderPassRateChart(trendData) {
@@ -179,86 +191,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const sortedData = [...trendData].sort((a, b) => new Date(a.date) - new Date(b.date));
-
         const labels = sortedData.map(item => item.date);
         const passRates = sortedData.map(item => item.passRate);
         const totalRuns = sortedData.map(item => item.totalRuns);
 
         if (passRateChart) {
-            passRateChart.destroy();
-        }
-
-        passRateChart = new Chart(DOM_ELEMENTS.passRateChartCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Pass Rate (%)',
-                    data: passRates,
-                    borderColor: 'rgb(30, 142, 62)',
-                    backgroundColor: 'rgba(30, 142, 62, 0.1)',
-                    fill: true,
-                    tension: 0.3,
-                    yAxisID: 'y'
+            passRateChart.data.labels = labels;
+            passRateChart.data.datasets[0].data = passRates;
+            passRateChart.data.datasets[1].data = totalRuns;
+            passRateChart.update();
+        } else {
+            passRateChart = new Chart(DOM_ELEMENTS.passRateChartCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pass Rate (%)',
+                        data: passRates,
+                        borderColor: 'rgb(30, 142, 62)',
+                        backgroundColor: 'rgba(30, 142, 62, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Всего запусков',
+                        data: totalRuns,
+                        borderColor: 'rgb(26, 115, 232)',
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        fill: false,
+                        tension: 0.3,
+                        yAxisID: 'y1',
+                        borderDash: [5, 5]
+                    }]
                 },
-                {
-                    label: 'Всего запусков',
-                    data: totalRuns,
-                    borderColor: 'rgb(26, 115, 232)',
-                    backgroundColor: 'rgba(26, 115, 232, 0.1)',
-                    fill: false,
-                    tension: 0.3,
-                    yAxisID: 'y1',
-                    borderDash: [5, 5]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                    }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Дата'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Процент прохождения (%)'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        grid: {
-                            drawOnChartArea: false,
-                        },
-                        title: {
-                            display: true,
-                            text: 'Всего запусков'
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return Number.isInteger(value) ? value : null;
-                            }
-                        }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+                    scales: {
+                        x: { title: { display: true, text: 'Дата' } },
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: 'Процент прохождения (%)' } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Всего запусков' }, ticks: { callback: value => Number.isInteger(value) ? value : null } }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     function renderSlowTestsChart(slowTestsData) {
@@ -268,69 +246,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const sortedData = [...slowTestsData].sort((a, b) => b.averageDurationMillis - a.averageDurationMillis);
-
         const labels = sortedData.map(item => item.testName);
         const durations = sortedData.map(item => (item.averageDurationMillis / 1000).toFixed(2));
 
         if (slowTestsChart) {
-            slowTestsChart.destroy();
-        }
-
-        slowTestsChart = new Chart(DOM_ELEMENTS.slowTestsChartCtx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Средняя длительность (сек)',
-                    data: durations,
-                    backgroundColor: 'rgba(217, 48, 37, 0.7)',
-                    borderColor: 'rgb(217, 48, 37)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.x !== null) {
-                                    label += `${context.parsed.x} сек`;
-                                }
-                                return label;
-                            }
-                        }
-                    }
+            slowTestsChart.data.labels = labels;
+            slowTestsChart.data.datasets[0].data = durations;
+            slowTestsChart.update();
+        } else {
+            slowTestsChart = new Chart(DOM_ELEMENTS.slowTestsChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Средняя длительность (сек)',
+                        data: durations,
+                        backgroundColor: 'rgba(217, 48, 37, 0.7)',
+                        borderColor: 'rgb(217, 48, 37)',
+                        borderWidth: 1
+                    }]
                 },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Средняя длительность (секунды)'
-                        }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: context => `${context.dataset.label || ''}: ${context.parsed.x} сек` } }
                     },
-                    y: {
-                        ticks: {
-                           autoSkip: false,
-                           callback: function(value, index, values) {
-                               const label = this.getLabelForValue(value);
-                               return label.length > 30 ? label.substring(0, 30) + '...' : label;
-                           }
-                        }
+                    scales: {
+                        x: { beginAtZero: true, title: { display: true, text: 'Средняя длительность (секунды)' } },
+                        y: { ticks: { autoSkip: false, callback: function(value) { const label = this.getLabelForValue(value); return label.length > 30 ? label.substring(0, 30) + '...' : label; } } }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     async function loadTestDetails(testRunId, selectedRow = null) {
@@ -352,14 +302,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(API_ENDPOINTS.testDetails(testRunId));
             if (!response.ok) throw new Error('Failed to fetch test details');
-
             const testRun = await response.json();
-
             testDetailsCache.set(testRunId, testRun);
-            console.log(`Saved test run ID ${testRunId} to cache.`);
-
             renderTestDetails(testRun);
-
         } catch (error) {
             console.error('Error loading test details:', error);
             DOM_ELEMENTS.rightPanelContent.innerHTML = `<div class="placeholder-content error-state"><p>${UI_MESSAGES.errorState}</p></div>`;
@@ -378,14 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p><strong>Статус:</strong> <span class="status-badge status-${testRun.status.toLowerCase()}">${escapeHtml(testRun.status)}</span></p>
                     <p><strong>Класс:</strong> ${escapeHtml(testRun.testClass || 'N/A')}</p>
                     <p><strong>Метод:</strong> ${escapeHtml(testRun.testMethod || 'N/A')}</p>
+                    <p><strong>Тестовый набор:</strong> ${escapeHtml(testRun.configuration?.testSuite || 'N/A')}</p>
+                    <p><strong>Версия приложения:</strong> ${escapeHtml(testRun.configuration?.appVersion || 'N/A')}</p>
                     <p><strong>Время запуска:</strong> <span class="run-info-time">${testRun.startTime ? formatDateTime(testRun.startTime) : 'N/A'}</span></p>
                     <p><strong>Время завершения:</strong> <span class="run-info-time">${testRun.endTime ? formatDateTime(testRun.endTime) : 'N/A'}</span></p>
                     <p><strong>Длительность:</strong> ${escapeHtml(durationSeconds)} сек</p>
-                    <p><strong>Версия приложения:</strong> ${escapeHtml(testRun.configuration?.appVersion || 'N/A')}</p>
-                    <p><strong>Тестовый набор:</strong> ${escapeHtml(testRun.configuration?.testSuite || 'N/A')}</p>
                 </div>
-            </div>
-        `;
+            </div>`;
 
         if (testRun.environmentDetails) {
             const env = testRun.environmentDetails;
@@ -400,8 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p><strong>Устройство:</strong> ${escapeHtml(env.deviceType || 'N/A')}</p>
                         ${env.deviceName ? `<p><strong>Имя устройства:</strong> ${escapeHtml(env.deviceName)}</p>` : ''}
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
         if (testRun.testTags && testRun.testTags.length > 0) {
@@ -411,31 +354,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tags-container">
                         ${testRun.testTags.map(tag => `<span class="test-tag">${escapeHtml(tag)}</span>`).join('')}
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
         if (testRun.analysisResults && testRun.analysisResults.length > 0) {
             contentHtml += `<div class="detail-block"><h3><i class="fa-solid fa-brain" aria-hidden="true"></i> Результаты Анализа AI</h3>`;
             testRun.analysisResults.forEach(result => {
                 const confidence = result.aiConfidence !== undefined ? `${(result.aiConfidence * 100).toFixed(0)}%` : 'N/A';
-                const feedbackHtml = `
-                    <div class="feedback-section" data-analysis-id="${result.id}">
-                        <span>Анализ был полезен?</span>
-                        <div class="feedback-buttons">
-                            <button class="feedback-btn" data-correct="true" title="Да, анализ верный" aria-label="Поставить лайк анализу"><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i></button>
-                            <button class="feedback-btn" data-correct="false" title="Нет, анализ неверный" aria-label="Поставить дизлайк анализу"><i class="fa-solid fa-thumbs-down" aria-hidden="true"></i></button>
-                        </div>
-                        <div class="feedback-submitted-msg" style="display: none;">${UI_MESSAGES.feedbackSuccess}</div>
-                    </div>`;
-
                 contentHtml += `
                     <div class="analysis-result-item">
                         <h4>${escapeHtml(result.analysisType)} <span class="ai-confidence">${confidence}</span></h4>
                         <p><strong>Причина:</strong> ${escapeHtml(result.suggestedReason || 'N/A')}</p>
                         <p><strong>Решение:</strong> ${escapeHtml(result.solution || 'N/A')}</p>
                         ${result.rawData ? `<details><summary>Сопутствующие данные</summary><pre class="raw-data-block">${escapeHtml(result.rawData)}</pre></details>` : ''}
-                        ${feedbackHtml}
+                        <div class="feedback-section" data-analysis-id="${result.id}">
+                            <span>Анализ был полезен?</span>
+                            <div class="feedback-buttons">
+                                <button class="feedback-btn" data-correct="true" title="Да, анализ верный" aria-label="Поставить лайк анализу"><i class="fa-solid fa-thumbs-up" aria-hidden="true"></i></button>
+                                <button class="feedback-btn" data-correct="false" title="Нет, анализ неверный" aria-label="Поставить дизлайк анализу"><i class="fa-solid fa-thumbs-down" aria-hidden="true"></i></button>
+                            </div>
+                            <div class="feedback-submitted-msg" style="display: none;">${UI_MESSAGES.feedbackSuccess}</div>
+                        </div>
                     </div>`;
             });
             contentHtml += `</div>`;
@@ -468,19 +407,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="detail-block">
                     <h3><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Путь выполнения</h3>
                     <ul class="execution-path-visualizer">`;
-
             testRun.executionPath.forEach((step, index) => {
-                const status = (step.result || 'unknown').toLowerCase();
-                const statusClass = `step-${status}`;
-
+                const statusClass = (step.result || 'unknown').toLowerCase();
                 const confidence = step.confidenceScore !== undefined ? `Уверенность: ${(step.confidenceScore * 100).toFixed(0)}%` : '';
                 const stepDuration = step.stepDurationMillis ? `Длительность: ${(step.stepDurationMillis / 1000).toFixed(2)} сек` : '';
-
                 contentHtml += `
                     <li class="${statusClass}">
                         <div class="step-header">
                             <strong>Шаг ${index + 1}:</strong> ${escapeHtml(step.action || 'Неизвестное действие')}
-                            <span class="step-status status-badge status-${status}">${escapeHtml(step.result || 'N/A')}</span>
+                            <span class="status-badge status-${statusClass}">${escapeHtml(step.result || 'N/A')}</span>
                         </div>
                         <div class="step-details">
                             <p><strong>Локатор:</strong> ${escapeHtml(step.locatorStrategy || 'N/A')} = ${escapeHtml(step.locatorValue || 'N/A')}</p>
@@ -491,7 +426,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </li>`;
             });
-
             contentHtml += `</ul></div>`;
         }
 
@@ -505,19 +439,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isAiSuggestionCorrect: isCorrect })
             });
-
             if (!response.ok) throw new Error(`Server responded with status ${response.status}.`);
 
             showToast(UI_MESSAGES.feedbackSuccess, 'success');
             if (buttonContainer) {
-                buttonContainer.style.display = 'none';
+                buttonContainer.style.opacity = '0';
+                buttonContainer.style.pointerEvents = 'none';
+
                 const submittedMsg = buttonContainer.nextElementSibling;
-                if (submittedMsg) submittedMsg.style.display = 'block';
+                if (submittedMsg) {
+                    submittedMsg.style.display = 'block';
+                    setTimeout(() => submittedMsg.style.opacity = '1', 50);
+                }
+
+                const clickedButton = buttonContainer.querySelector(`.feedback-btn[data-correct="${isCorrect}"]`);
+                if(clickedButton) {
+                    clickedButton.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
             }
         } catch (error) {
             console.error('Error submitting feedback:', error);
             showToast(UI_MESSAGES.feedbackError, 'error');
         }
+    }
+
+    function initializeFeedbackButtons() {
+        DOM_ELEMENTS.rightPanelContent.addEventListener('click', e => {
+            const button = e.target.closest('.feedback-btn');
+            if (!button) return;
+
+            const feedbackSection = button.closest('.feedback-section');
+            if (feedbackSection.classList.contains('submitted')) return;
+
+            const analysisId = feedbackSection.dataset.analysisId;
+            const isCorrect = button.dataset.correct === 'true';
+
+            const buttonContainer = button.closest('.feedback-buttons');
+            submitFeedback(analysisId, isCorrect, buttonContainer);
+            feedbackSection.classList.add('submitted');
+        });
     }
 
     function initializeTestRowClickListeners() {
@@ -632,7 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(createDemoBtn) {
             createDemoBtn.addEventListener('click', async () => {
                 createDemoBtn.disabled = true;
-
                 try {
                     const response = await fetch(API_ENDPOINTS.createDemo, { method: 'POST' });
                     if (!response.ok) throw new Error('Server error during demo creation.');
@@ -640,19 +599,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const newTestRunDetails = await response.json();
 
                     testDetailsCache.set(newTestRunDetails.id, newTestRunDetails);
-                    console.log(`Proactively cached new demo test run: ${newTestRunDetails.id}`);
-
                     prependNewTestRow(newTestRunDetails);
 
                     const newRow = document.querySelector(`.test-row[data-id="${newTestRunDetails.id}"]`);
                     if(newRow) {
                         loadTestDetails(newTestRunDetails.id, newRow);
                     }
-
                     loadStatistics();
-
                     showToast('Демо-запись успешно создана', 'success');
-
                 } catch (error) {
                     console.error("Failed to create demo record:", error);
                     showToast('Ошибка при создании демо-записи.', 'error');

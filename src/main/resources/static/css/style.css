@@ -576,6 +576,9 @@ body {
 .status-badge.status-passed { background-color: var(--color-success-background); color: var(--color-success); }
 .status-badge.status-failed { background-color: var(--color-failure-background); color: var(--color-failure); }
 .status-badge.status-skipped { background-color: var(--color-skipped-background); color: var(--color-skipped); }
+.status-badge.status-broken { background-color: var(--color-skipped-background); color: var(--color-skipped); }
+.status-badge.status-unknown { background-color: var(--color-light-grey); color: var(--color-text-secondary); }
+
 
 .analysis-result-item {
     background: var(--color-panel-background);
@@ -693,6 +696,7 @@ pre.error-pre {
 .feedback-buttons {
     display: flex;
     gap: var(--spacing-sm);
+    transition: opacity 0.3s ease;
 }
 
 .feedback-btn {
@@ -717,16 +721,27 @@ pre.error-pre {
     color: var(--color-accent);
 }
 
+.feedback-section.submitted .feedback-btn {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.feedback-btn.correct,
 .feedback-btn[data-correct="true"]:hover {
     background-color: var(--color-success-background);
     border-color: var(--color-success);
     color: var(--color-success);
 }
 
+.feedback-btn.incorrect,
 .feedback-btn[data-correct="false"]:hover {
     background-color: var(--color-failure-background);
     border-color: var(--color-failure);
     color: var(--color-failure);
+}
+
+.feedback-btn.correct, .feedback-btn.incorrect {
+    transform: scale(1.1);
 }
 
 .feedback-btn:focus-visible {
@@ -737,7 +752,8 @@ pre.error-pre {
 .feedback-submitted-msg {
     font-style: italic;
     color: var(--color-success);
-    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .execution-path-visualizer {
@@ -819,19 +835,6 @@ pre.error-pre {
     font-weight: 400;
     margin-right: 5px;
 }
-
-.step-status {
-    padding: 2px 8px;
-    border-radius: var(--border-radius-pill);
-    font-size: 11px;
-    font-weight: 500;
-    white-space: nowrap;
-    margin-left: auto;
-}
-
-.step-status.status-passed { background-color: var(--color-success-background); color: var(--color-success); }
-.step-status.status-failed { background-color: var(--color-failure-background); color: var(--color-failure); }
-.step-status.status-skipped { background-color: var(--color-skipped-background); color: var(--color-skipped); }
 
 .step-error-message {
     color: var(--color-failure);

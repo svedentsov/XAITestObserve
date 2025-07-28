@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1")
@@ -63,5 +65,11 @@ public class DashboardApiController {
         log.warn("API request to DELETE ALL test run data has been received.");
         testRunService.deleteAllTestRuns();
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/tests/today")
+    public ResponseEntity<List<TestRunDetailDTO>> getTodaysTestRuns() {
+        log.debug("API request for all of today's test run details.");
+        return ResponseEntity.ok(testRunService.getTestRunsForToday());
     }
 }
