@@ -12,11 +12,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Основная сущность, представляющая один конкретный запуск теста.
+ * Хранит всю информацию о тесте: его имя, статус, время выполнения,
+ * детали окружения, артефакты, ошибки, а также результаты анализа.
+ * Является центральной сущностью в доменной модели приложения.
+ */
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestRun {
+
+    /**
+     * Перечисление возможных статусов завершения теста.
+     */
     public enum TestStatus {
         PASSED,
         FAILED,
@@ -56,28 +66,36 @@ public class TestRun {
             @AttributeOverride(name = "additionalStepData", column = @Column(name = "failed_step_additional_data", length = 1000))
     })
     private AiDecisionMetadata failedStep;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "execution_path", joinColumns = @JoinColumn(name = "test_run_id"))
     @OrderColumn(name = "step_index")
     private List<AiDecisionMetadata> executionPath = new ArrayList<>();
+
     private String appVersion;
     private String environment;
     private String testSuite;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "test_run_tags", joinColumns = @JoinColumn(name = "test_run_id"))
     @Column(name = "tag_name")
     private List<String> testTags = new ArrayList<>();
+
     @Embedded
     private EnvironmentDetailsDTO environmentDetails;
+
     @Embedded
     private TestArtifactsDTO artifacts;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "test_run_custom_metadata", joinColumns = @JoinColumn(name = "test_run_id"))
     @MapKeyColumn(name = "meta_key")
     @Column(name = "meta_value", length = 1000)
     private Map<String, String> customMetadata;
+
     @OneToMany(mappedBy = "testRun", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AnalysisResult> analysisResults = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "configuration_id")
     private TestConfiguration configuration;

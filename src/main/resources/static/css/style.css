@@ -181,6 +181,20 @@ body {
     background-color: #b0261d;
 }
 
+.btn.btn-secondary {
+    background-color: #5c636a;
+    color: white;
+    text-decoration: none;
+}
+
+.btn.btn-secondary:hover {
+    background-color: #494f54;
+}
+
+.btn.btn-secondary span {
+    white-space: nowrap;
+}
+
 .tabs {
     display: flex;
     flex-direction: column;

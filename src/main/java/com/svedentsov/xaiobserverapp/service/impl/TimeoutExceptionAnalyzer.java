@@ -6,14 +6,33 @@ import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+/**
+ * Анализатор для сбоев, вызванных {@code TimeoutException}.
+ * <p>
+ * Это исключение обычно возникает, когда явное ожидание (например, WebDriverWait)
+ * не дожидается выполнения условия за отведенное время.
+ */
 @Component
 @Order(13)
 public class TimeoutExceptionAnalyzer implements FailureAnalyzer {
+
+    /**
+     * Проверяет, является ли тип исключения {@code TimeoutException}.
+     *
+     * @param event DTO события сбоя.
+     * @return {@code true}, если тип исключения содержит "TimeoutException", иначе {@code false}.
+     */
     @Override
     public boolean canAnalyze(FailureEventDTO event) {
         return event.getExceptionType() != null && event.getExceptionType().contains("TimeoutException");
     }
 
+    /**
+     * Предоставляет анализ и возможные решения для проблем, связанных с таймаутами.
+     *
+     * @param event DTO события сбоя.
+     * @return {@link AnalysisResult} с рекомендациями по увеличению таймаутов или проверке производительности.
+     */
     @Override
     public AnalysisResult analyze(FailureEventDTO event) {
         AnalysisResult ar = new AnalysisResult();

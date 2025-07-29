@@ -9,6 +9,12 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Фабрика для создания демонстрационных данных.
+ * <p>
+ * Генерирует случайные, но правдоподобные события о завершении тестов
+ * для наполнения базы данных и демонстрации работы системы.
+ */
 @Service
 public class DemoDataFactory {
     private static final List<String> TEST_CLASSES = List.of(
@@ -66,6 +72,11 @@ public class DemoDataFactory {
     private static final List<String> GIT_BRANCHES = List.of("main", "develop", "feature/new-login-flow", "hotfix/urgent-bug-PROJ-123");
     private static final List<String> TRIGGERED_BY = List.of("Jenkins CI", "GitHub Actions", "Manual Run (user: admin)");
 
+    /**
+     * Генерирует одно случайное событие о завершении теста.
+     *
+     * @return DTO {@link FailureEventDTO} с заполненными случайными данными.
+     */
     public FailureEventDTO generateRandomEvent() {
         boolean isFailed = ThreadLocalRandom.current().nextDouble() < 0.6; // 60% шанс на FAILED
         long currentTime = System.currentTimeMillis();
@@ -192,6 +203,22 @@ public class DemoDataFactory {
         return event;
     }
 
+    /**
+     * Вспомогательный метод для создания одного шага выполнения теста.
+     *
+     * @param number          Порядковый номер шага.
+     * @param action          Описание действия.
+     * @param locatorStrategy Стратегия поиска.
+     * @param locatorValue    Значение локатора.
+     * @param result          Результат выполнения шага.
+     * @param interactedText  Текст, с которым взаимодействовали.
+     * @param errorMessage    Сообщение об ошибке (если есть).
+     * @param confidence      Уверенность AI.
+     * @param startTime       Время начала шага.
+     * @param duration        Длительность шага.
+     * @param additionalData  Дополнительные данные.
+     * @return Заполненный объект {@link AiDecisionMetadata}.
+     */
     private AiDecisionMetadata createStep(int number, String action, String locatorStrategy, String locatorValue,
                                           String result, String interactedText, String errorMessage, double confidence,
                                           long startTime, long duration, String additionalData) {
@@ -211,10 +238,25 @@ public class DemoDataFactory {
         return step;
     }
 
+    /**
+     * Вспомогательный метод для получения случайного элемента из списка.
+     *
+     * @param list Список для выбора.
+     * @param <T>  Тип элементов в списке.
+     * @return Случайный элемент из списка.
+     */
     private <T> T getRandomElement(List<T> list) {
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));
     }
 
+    /**
+     * Генерирует фиктивный, но правдоподобный стек-трейс для демонстрационных целей.
+     *
+     * @param testClass     Класс теста.
+     * @param testMethod    Метод теста.
+     * @param exceptionType Тип исключения.
+     * @return Строка, имитирующая стек-трейс.
+     */
     private String generateStackTrace(String testClass, String testMethod, String exceptionType) {
         return String.format("%s: %s\n" +
                         "\tat %s.%s(TestClass.java:%d)\n" +

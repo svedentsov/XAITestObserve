@@ -18,12 +18,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для расчета и предоставления статистики по тестовым запускам.
+ * <p>
+ * Активно использует кэширование для повышения производительности, так как
+ * расчет статистики может быть ресурсоемкой операцией.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class StatisticsService {
+
     private final TestRunRepository testRunRepository;
 
+    /**
+     * Рассчитывает и возвращает общую статистику.
+     * <p>
+     * Результат выполнения этого метода кэшируется в кэше "statistics".
+     *
+     * @return DTO {@link StatisticsDTO} с общей статистикой.
+     */
     @Transactional(readOnly = true)
     @Cacheable("statistics")
     public StatisticsDTO getOverallStatistics() {
@@ -52,11 +66,24 @@ public class StatisticsService {
         return new StatisticsDTO(total, passed, failed, skipped, passRate, failingTests, dailyPassRateTrend, topSlowTests);
     }
 
+    /**
+     * Очищает кэш со статистикой.
+     * <p>
+     * Этот метод должен вызываться каждый раз, когда данные, влияющие на статистику,
+     * изменяются (например, после сохранения нового тестового запуска).
+     */
     @CacheEvict(value = "statistics", allEntries = true)
     public void clearStatisticsCache() {
         log.info("Statistics cache has been cleared.");
     }
 
+    /**
+     * Рассчитывает тренд Pass Rate по дням за указанный период.
+     *
+     * @param allRuns Список всех запусков.
+     * @param days    Количество дней для анализа.
+     * @return Список данных для построения графика.
+     */
     private List<StatisticsDTO.DailyTrendData> calculateDailyPassRateTrend(List<TestRun> allRuns, int days) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
@@ -79,6 +106,13 @@ public class StatisticsService {
         return trendData;
     }
 
+    /**
+     * Рассчитывает топ самых медленных тестов по средней длительности выполнения.
+     *
+     * @param allRuns Список всех запусков.
+     * @param limit   Количество тестов в топе.
+     * @return Список DTO с информацией о медленных тестах.
+     */
     private List<StatisticsDTO.SlowTestDTO> calculateTopSlowTests(List<TestRun> allRuns, int limit) {
         return allRuns.stream()
                 .filter(run -> run.getTestMethod() != null && !run.getTestMethod().isEmpty())

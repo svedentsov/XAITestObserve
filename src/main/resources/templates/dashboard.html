@@ -18,6 +18,11 @@
             <h1 class="header-title-text">Панель Анализа Тестов</h1>
         </div>
         <div class="header-actions">
+            <a th:href="@{/swagger-ui.html}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary"
+               aria-label="Открыть документацию API">
+                <i class="fa-solid fa-book" aria-hidden="true"></i>
+                <span>API Документация</span>
+            </a>
             <button id="deleteAllDataBtn" class="btn btn-danger">Удалить все данные</button>
             <button id="createDemoBtn" class="btn btn-primary" aria-label="Создать новый демо-запуск теста">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i> Создать демо
@@ -31,18 +36,25 @@
         <section class="left-panel">
             <div class="tabs">
                 <div class="tab-buttons" role="tablist">
-                    <button class="tab-button active" data-tab="overview" role="tab" aria-selected="true" id="tab-overview">Сводка</button>
-                    <button class="tab-button" data-tab="widgets" role="tab" aria-selected="false" id="tab-widgets">Виджеты</button>
+                    <button class="tab-button active" data-tab="overview" role="tab" aria-selected="true"
+                            id="tab-overview">Сводка
+                    </button>
+                    <button class="tab-button" data-tab="widgets" role="tab" aria-selected="false" id="tab-widgets">
+                        Виджеты
+                    </button>
                 </div>
                 <div id="overviewTabContent" class="tab-content active" role="tabpanel" aria-labelledby="tab-overview">
-                    <div th:if="${message}" class="initial-alert-message success" style="display:none;" th:text="${message}" role="status"></div>
-                    <div th:if="${error}" class="initial-alert-message error" style="display:none;" th:text="${error}" role="alert"></div>
+                    <div th:if="${message}" class="initial-alert-message success" style="display:none;"
+                         th:text="${message}" role="status"></div>
+                    <div th:if="${error}" class="initial-alert-message error" style="display:none;" th:text="${error}"
+                         role="alert"></div>
 
                     <div class="test-list-wrapper">
                         <table class="test-list-table">
                             <thead>
                             <tr>
-                                <th scope="col" class="status-header"></th> <th scope="col">Метод Теста</th>
+                                <th scope="col" class="status-header"></th>
+                                <th scope="col">Метод Теста</th>
                                 <th scope="col">Окружение</th>
                                 <th scope="col">Версия</th>
                                 <th scope="col">Время запуска</th>
@@ -58,13 +70,15 @@
                                            title="Провал" aria-label="Тест провален"></i>
                                         <i th:case="'SKIPPED'" class="fa-solid fa-circle-minus status-icon skipped-icon"
                                            title="Пропущен" aria-label="Тест пропущен"></i>
-                                        <i th:case="'BROKEN'" class="fa-solid fa-circle-exclamation status-icon skipped-icon"
+                                        <i th:case="'BROKEN'"
+                                           class="fa-solid fa-circle-exclamation status-icon skipped-icon"
                                            title="Сломан" aria-label="Тест сломан"></i>
                                     </span>
                                 </td>
                                 <td class="test-method-cell" th:text="${run.testMethod}"></td>
                                 <td>
-                                    <span class="badge badge-env" th:text="${run.configuration?.environment ?: 'N/A'}"></span>
+                                    <span class="badge badge-env"
+                                          th:text="${run.configuration?.environment ?: 'N/A'}"></span>
                                 </td>
                                 <td th:text="${run.configuration?.appVersion ?: 'N/A'}"></td>
                                 <td class="test-run-time-cell" th:data-timestamp="${run.timestamp}"></td>
@@ -76,10 +90,14 @@
                 <div id="widgetsTabContent" class="tab-content" role="tabpanel" aria-labelledby="tab-widgets">
                     <div id="stats-container" class="stats-section">
                         <div class="stats-grid">
-                            <div class="stats-card"><h4>Прогоны</h4><p id="stats-total-runs">0</p></div>
-                            <div class="stats-card"><h4>Pass Rate</h4><p id="stats-pass-rate">0.0%</p></div>
-                            <div class="stats-card status-passed"><h4>Прошли</h4><p id="stats-passed-runs">0</p></div>
-                            <div class="stats-card status-failed"><h4>Упали</h4><p id="stats-failed-runs">0</p></div>
+                            <div class="stats-card"><h4>Прогоны</h4>
+                                <p id="stats-total-runs">0</p></div>
+                            <div class="stats-card"><h4>Pass Rate</h4>
+                                <p id="stats-pass-rate">0.0%</p></div>
+                            <div class="stats-card status-passed"><h4>Прошли</h4>
+                                <p id="stats-passed-runs">0</p></div>
+                            <div class="stats-card status-failed"><h4>Упали</h4>
+                                <p id="stats-failed-runs">0</p></div>
                         </div>
                         <div class="failing-tests-card">
                             <h4>Топ нестабильных тестов</h4>

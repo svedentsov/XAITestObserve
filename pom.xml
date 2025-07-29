@@ -1,34 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Основной файл конфигурации проекта Maven (Project Object Model). Определяет структуру проекта, зависимости, плагины и другие параметры сборки. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <!-- Родительский POM. Наслдует множество настроек и управление версиями зависимостей от Spring Boot, что упрощает конфигурацию. -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.3.1</version>
-        <relativePath/>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
+    <!-- Координаты проекта -->
     <groupId>com.svedentsov</groupId>
     <artifactId>xaiobserverapp</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <!-- Мета-информация о проекте -->
     <name>XaiObserverApp</name>
     <description>XAI Observer Application for Test Results Analysis</description>
-
+    <!-- Свойства проекта. Используются для централизованного управления версиями зависимостей и другими параметрами. -->
     <properties>
         <java.version>21</java.version>
-        <selenium.version>4.18.1</selenium.version>
-        <junit-jupiter.version>5.10.2</junit-jupiter.version>
-        <junit-platform.version>1.10.2</junit-platform.version>
+        <springdoc.version>2.5.0</springdoc.version> <!-- Версия для Swagger/OpenAPI -->
         <okhttp.version>4.12.0</okhttp.version>
-        <jackson.version>2.17.1</jackson.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
         <lombok.version>1.18.30</lombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <jakarta-annotation.version>2.1.1</jakarta-annotation.version>
     </properties>
-
+    <!-- Основной блок, определяющий зависимости проекта -->
     <dependencies>
+        <!-- === STARTERS - Основные зависимости Spring Boot === -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -45,6 +47,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
+        <!-- === API DOCUMENTATION - Документация Swagger/OpenAPI === -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+        <!-- === MAPPING & LOMBOK - Маппинг объектов и утилиты === -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
@@ -54,20 +63,12 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct-processor</artifactId>
             <version>${org.mapstruct.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-hibernate6</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
+            <scope>provided</scope> <!-- Процессор нужен только на этапе компиляции -->
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -76,20 +77,28 @@
             <version>${lombok-mapstruct-binding.version}</version>
             <scope>provided</scope>
         </dependency>
+        <!-- === DATABASE & SERIALIZATION === -->
         <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-            <version>3.0.2</version>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope> <!-- Драйвер нужен только во время выполнения -->
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-hibernate6</artifactId>
+            <!-- Версия управляется родительским POM Spring Boot -->
+        </dependency>
+        <!-- === JAKARTA EE - Дополнительные API === -->
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <version>${jakarta-annotation.version}</version>
         </dependency>
     </dependencies>
-
+    <!-- Конфигурация процесса сборки проекта -->
     <build>
         <plugins>
+            <!-- Плагин для сборки исполняемого JAR-файла Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -102,30 +111,36 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!-- Плагин для компиляции Java-кода -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.13.0</version> <!-- Используем актуальную версию -->
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <!-- Настройка обработчиков аннотаций. Крайне важна для совместной работы Lombok и MapStruct. -->
                     <annotationProcessorPaths>
+                        <!-- Обработчик для MapStruct -->
                         <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${org.mapstruct.version}</version>
                         </path>
+                        <!-- Обработчик для Lombok -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
+                        <!-- Связка Lombok и MapStruct -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok-mapstruct-binding</artifactId>
                             <version>${lombok-mapstruct-binding.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <!-- Аргумент компилятора, который указывает MapStruct генерировать мапперы как Spring-компоненты (@Component). -->
                     <compilerArgs>
                         <arg>-Amapstruct.defaultComponentModel=spring</arg>
                     </compilerArgs>

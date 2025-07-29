@@ -7,14 +7,33 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Сервис для анализа первопричин (Root Cause Analysis - RCA) сбоев тестов.
+ * <p>
+ * Использует цепочку анализаторов (реализаций {@link FailureAnalyzer}),
+ * чтобы определить наиболее вероятную причину сбоя на основе предоставленных данных.
+ */
 @Service
 public class RcaService {
+
     private final List<FailureAnalyzer> failureAnalyzers;
 
+    /**
+     * Конструктор, который автоматически внедряет все бины, реализующие интерфейс {@link FailureAnalyzer}.
+     * Spring автоматически сортирует их на основе аннотации {@code @Order}.
+     *
+     * @param failureAnalyzers Список анализаторов сбоев.
+     */
     public RcaService(List<FailureAnalyzer> failureAnalyzers) {
         this.failureAnalyzers = failureAnalyzers;
     }
 
+    /**
+     * Анализирует событие завершения теста для определения причины.
+     *
+     * @param event DTO события завершения теста.
+     * @return Список результатов анализа. Обычно содержит один результат.
+     */
     public List<AnalysisResult> analyzeTestRun(FailureEventDTO event) {
         List<AnalysisResult> results = new ArrayList<>();
         if ("PASSED".equalsIgnoreCase(event.getStatus())) {
@@ -33,6 +52,11 @@ public class RcaService {
         return results;
     }
 
+    /**
+     * Создает стандартный результат для успешно пройденного теста.
+     *
+     * @return Результат анализа.
+     */
     private AnalysisResult createSuccessfulRunSummary() {
         AnalysisResult ar = new AnalysisResult();
         ar.setAnalysisType("Резюме успешного запуска");
@@ -43,6 +67,12 @@ public class RcaService {
         return ar;
     }
 
+    /**
+     * Создает общий результат для сбоя, если ни один конкретный анализатор не сработал.
+     *
+     * @param event Событие сбоя.
+     * @return Результат анализа.
+     */
     private AnalysisResult createGeneralFailureSummary(FailureEventDTO event) {
         AnalysisResult ar = new AnalysisResult();
         ar.setAnalysisType("Общий анализ сбоя");

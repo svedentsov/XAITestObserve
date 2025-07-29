@@ -17,11 +17,18 @@ import org.springframework.validation.annotation.Validated;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Сервис-оркестратор для обработки событий о завершении тестов.
+ * <p>
+ * Координирует процесс сохранения данных о тесте, вызов анализа причин сбоя,
+ * отправку уведомлений и очистку кэшей. Все операции выполняются асинхронно.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Validated
 public class TestEventOrchestrator {
+
     private final TestRunRepository testRunRepository;
     private final TestConfigurationService testConfigurationService;
     private final RcaService rcaService;
@@ -29,6 +36,20 @@ public class TestEventOrchestrator {
     private final TestRunMapper testRunMapper;
     private final StatisticsService statisticsService;
 
+    /**
+     * Асинхронно обрабатывает и сохраняет событие о завершении теста.
+     * <p>
+     * Выполняет следующие шаги:
+     * 1. Находит или создает конфигурацию теста.
+     * 2. Преобразует DTO в сущность.
+     * 3. Запускает анализ причин сбоя.
+     * 4. Сохраняет сущность и результаты анализа.
+     * 5. Отправляет уведомление в случае сбоя.
+     * 6. Очищает кэш статистики.
+     *
+     * @param event Валидный DTO {@link FailureEventDTO} с данными о тесте.
+     * @return {@link CompletableFuture} с сохраненной сущностью {@link TestRun}.
+     */
     @Async
     @Transactional
     public CompletableFuture<TestRun> processAndSaveTestEvent(@Valid FailureEventDTO event) {

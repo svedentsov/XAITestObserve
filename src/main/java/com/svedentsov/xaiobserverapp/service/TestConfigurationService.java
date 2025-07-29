@@ -13,23 +13,50 @@ import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
+/**
+ * Сервис для управления сущностями {@link TestConfiguration}.
+ * <p>
+ * Отвечает за поиск существующих и создание новых конфигураций,
+ * обеспечивая их уникальность.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TestConfigurationService {
+
     private final TestConfigurationRepository testConfigurationRepository;
 
+    /**
+     * Находит существующую или создает новую конфигурацию на основе данных из события.
+     *
+     * @param event DTO события завершения теста.
+     * @return Сущность {@link TestConfiguration}, либо новая, либо уже существующая в БД.
+     */
     public TestConfiguration findOrCreateConfiguration(FailureEventDTO event) {
         String uniqueName = buildUniqueName(event);
         Optional<TestConfiguration> existingConfig = this.findByUniqueName(uniqueName);
         return existingConfig.orElseGet(() -> createConfiguration(event, uniqueName));
     }
 
+    /**
+     * Находит конфигурацию по ее уникальному имени.
+     *
+     * @param uniqueName Уникальное имя.
+     * @return Optional с найденной конфигурацией.
+     */
     @Transactional(readOnly = true)
     public Optional<TestConfiguration> findByUniqueName(String uniqueName) {
         return testConfigurationRepository.findByUniqueName(uniqueName);
     }
 
+    /**
+     * Создает и сохраняет новую конфигурацию в новой транзакции.
+     * Обрабатывает возможные состояния гонки при одновременном создании одинаковых конфигураций.
+     *
+     * @param event      DTO события.
+     * @param uniqueName Уникальное имя для новой конфигурации.
+     * @return Сохраненная сущность {@link TestConfiguration}.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public TestConfiguration createConfiguration(FailureEventDTO event, String uniqueName) {
         try {
@@ -47,6 +74,12 @@ public class TestConfigurationService {
         }
     }
 
+    /**
+     * Строит уникальное имя для конфигурации на основе версии, набора тестов и окружения.
+     *
+     * @param event DTO события.
+     * @return Строка с уникальным именем.
+     */
     private String buildUniqueName(FailureEventDTO event) {
         String appVersion = StringUtils.hasText(event.getAppVersion()) ? event.getAppVersion() : "unknown";
         String testSuite = StringUtils.hasText(event.getTestSuite()) ? event.getTestSuite() : "default";
