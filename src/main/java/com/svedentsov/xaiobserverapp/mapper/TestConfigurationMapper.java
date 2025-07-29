@@ -17,12 +17,4 @@ public interface TestConfigurationMapper {
      * @return DTO-представление.
      */
     TestConfigurationDTO toDto(TestConfiguration entity);
-
-    /**
-     * Преобразует DTO в сущность TestConfiguration.
-     *
-     * @param dto DTO для преобразования.
-     * @return Сущность.
-     */
-    TestConfiguration toEntity(TestConfigurationDTO dto);
 }

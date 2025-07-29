@@ -19,12 +19,4 @@ public class TestConfigurationDTO {
 
     @Schema(description = "Тестовый набор", example = "Regression")
     private String testSuite;
-
-    public static TestConfigurationDTO fromEntity(TestConfiguration config) {
-        TestConfigurationDTO dto = new TestConfigurationDTO();
-        dto.setAppVersion(config.getAppVersion());
-        dto.setEnvironment(config.getEnvironment());
-        dto.setTestSuite(config.getTestSuite());
-        return dto;
-    }
 }

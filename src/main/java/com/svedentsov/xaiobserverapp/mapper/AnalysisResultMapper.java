@@ -17,12 +17,4 @@ public interface AnalysisResultMapper {
      * @return DTO-представление.
      */
     AnalysisResultDTO toDto(AnalysisResult entity);
-
-    /**
-     * Преобразует DTO в сущность AnalysisResult.
-     *
-     * @param dto DTO для преобразования.
-     * @return Сущность.
-     */
-    AnalysisResult toEntity(AnalysisResultDTO dto);
 }

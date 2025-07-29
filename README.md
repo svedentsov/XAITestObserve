@@ -1,105 +1,132 @@
-# Система Анализа Результатов Тестирования
+# Система анализа результатов тестирования
 
-XAI Observer App - это веб-приложение, предназначенное для сбора, визуализации и интеллектуального анализа результатов автоматизированных тестов. Оно помогает командам по обеспечению качества и разработчикам быстро идентифицировать причины сбоев тестов, отслеживать метрики качества и улучшать стабильность релизов.
+XAI Observer App - это веб-приложение на базе Spring Boot, предназначенное для сбора, визуализации и интеллектуального анализа результатов автоматизированных тестов. Оно помогает командам по обеспечению качества и разработчикам быстро идентифицировать причины сбоев тестов, отслеживать метрики качества и улучшать стабильность релизов.
 
-## Возможности
+## Ключевые возможности
+*   **Централизованный сбор результатов:** Получение данных о выполнении тестов (успешно/провалено) по REST API от CI/CD систем или тестовых фреймворков.
+*   **Интерактивная API-документация:** Полностью документированный REST API с помощью **Swagger UI**, позволяющий изучать и тестировать эндпоинты прямо из браузера.
+*   **Автоматический анализ причин (RCA):** Интеллектуальный анализ проваленных тестов с использованием цепочки анализаторов для предложения наиболее вероятных причин сбоев и возможных решений.
+*   **Детальная информация о запусках:** Просмотр подробностей каждого запуска, включая стек-трейсы, артефакты (логи, скриншоты), детали окружения и путь выполнения.
+*   **Визуализация пути выполнения:** Наглядное отображение последовательности действий, выполненных тестом, с указанием шага, на котором произошёл сбой.
+*   **Статистика и тренды:**
+    *   Общая статистика по количеству пройденных/проваленных/пропущенных тестов.
+    *   Динамика Pass Rate.
+    *   Топ нестабильных и самых медленных тестов.
+*   **Обратная связь по анализу:** Возможность для пользователей оценивать корректность предложенного AI-анализа для будущего дообучения моделей.
+*   **Управление конфигурациями:** Отслеживание результатов по различным версиям приложений, средам и тестовым наборам.
 
-* **Приём событий о завершении тестов:** Получение данных о выполнении тестов (успешно/провалено) от CI/CD-систем или тестовых фреймворков.
-* **Детальная информация о тестовых запусках:** Просмотр подробностей каждого запуска, включая стек-трейсы, типы исключений и шаги выполнения.
-* **Автоматический анализ причин (RCA):** Интеллектуальный анализ проваленных тестов для предложения наиболее вероятных причин сбоев и возможных решений.
-* **Визуализация пути выполнения:** Отображение последовательности действий, выполненных тестом, с указанием шага, на котором произошёл сбой.
-* **Статистика и тренды:**
-    * Общая статистика по количеству пройденных/проваленных/пропущенных тестов.
-    * Процент прохождения тестов.
-    * Топ-10 самых часто падающих тестов.
-    * Ежедневный тренд процента прохождения.
-* **Обратная связь по анализу:** Возможность для пользователей оценивать корректность предложенного AI-анализа, что способствует улучшению модели.
-* **Управление конфигурациями:** Отслеживание результатов тестов по различным версиям приложений, средам и тестовым наборам.
-* **Уведомления о сбоях:** Базовая система уведомлений о проваленных тестах.
+## Технологический стек
 
-## Технологии
+#### Backend
+*   **Фреймворк:** Spring Boot 3
+*   **Доступ к данным:** Spring Data JPA / Hibernate
+*   **База данных:** H2 Database (встраиваемая)
+*   **Документация API:** Springdoc OpenAPI (Swagger 3)
+*   **Утилиты:** Lombok, MapStruct
 
-Проект построен на стеке Spring Boot и использует современные веб-технологии:
-* **Backend:** Spring Boot, Spring Data JPA, Lombok
-* **База данных:** H2 Database (для разработки и тестирования)
-* **ORM:** Hibernate
-* **Веб-интерфейс:** Thymeleaf, HTML, CSS
-* **Логирование:** SLF4J / Logback
+#### Frontend
+*   **Шаблонизатор:** Thymeleaf
+*   **Стили:** CSS3, Font Awesome
+*   **Скрипты:** Vanilla JavaScript (ES6+)
+*   **Графики:** Chart.js
 
-## Запуск приложения
+## Руководство по запуску
 
-Для запуска приложения убедитесь, что у вас установлен **Java Development Kit (JDK) 17** или выше и **Maven 3.x**.
+### Требования
+*   **Java Development Kit (JDK) 21** или выше.
+*   **Apache Maven 3.8.x** или выше.
+
+### Установка и запуск
 
 1.  **Склонируйте репозиторий:**
     ```bash
-    git clone [ссылка_на_ваш_репозиторий]
-    cd XaiObserverApp
+    git clone https://github.com/svedentsov/XAITestObserve.git
+    cd XAITestObserve
     ```
 
 2.  **Соберите проект с помощью Maven:**
+    Эта команда скачает все зависимости, скомпилирует код и выполнит тесты.
     ```bash
     mvn clean install
     ```
 
-3.  **Запустите приложение Spring Boot:**
+3.  **Запустите приложение:**
     ```bash
     mvn spring-boot:run
     ```
-
-    Или, если вы собрали исполняемый JAR:
+    Или, если вы собрали исполняемый JAR-файл:
     ```bash
     java -jar target/xaiobserverapp-0.0.1-SNAPSHOT.jar
     ```
+После запуска приложение будет доступно по адресу `http://localhost:8080`.
 
-После запуска приложение будет доступно по адресу `http://localhost:8080/`.
+## Основные эндпоинты и интерфейсы
 
-## Точки доступа и интерфейсы
+*   **Главный дашборд:** `http://localhost:8080/`
+    *   Отображает список последних тестовых запусков и виджеты со статистикой.
 
-* **Главный дашборд:** `http://localhost:8080/`
-    * Отображает список последних тестовых запусков и общую статистику.
-* **Детали тестового запуска:** `http://localhost:8080/test/{id}`
-    * Подробная страница для каждого тестового запуска.
-* **API для отправки событий:** `POST http://localhost:8080/api/v1/events/test-finished`
-    * Принимает JSON-тело типа `FailureEventDTO` для регистрации завершенных тестов.
-* **API для получения статистики:** `GET http://localhost:8080/api/v1/statistics`
-    * Возвращает JSON с агрегированной статистикой.
-* **API для обратной связи:** `POST http://localhost:8080/api/v1/analysis/{analysisId}/feedback`
-    * Позволяет отправить фидбек по конкретному результату анализа.
-* **Консоль H2 (для просмотра данных):** `http://localhost:8080/h2-console`
-    * Используйте `jdbc:h2:file:./data/xaiobserver` в качестве JDBC URL.
+*   **Документация API (Swagger UI):** `http://localhost:8080/swagger-ui.html`
+    *   Интерактивная документация для всех REST-эндпоинтов. **Рекомендуется начать знакомство с API отсюда.**
 
-## Пример использования API (событие о сбое теста)
+*   **API-спецификация (JSON):** `http://localhost:8080/v3/api-docs`
+    *   Машиночитаемая спецификация API в формате OpenAPI 3.
 
-Вы можете отправить данные о проваленном тесте, используя `curl` или любой HTTP-клиент:
+*   **Консоль H2 Database:** `http://localhost:8080/h2-console`
+    *   **JDBC URL:** `jdbc:h2:file:./data/xaiobserver`
+    *   **User Name:** `sa`
+    *   **Password:** (оставьте пустым)
+
+## Пример использования API
+
+Вы можете отправить событие о завершении теста, используя `curl` или любой HTTP-клиент.
 
 ```bash
 curl -X POST \
   http://localhost:8080/api/v1/events/test-finished \
   -H 'Content-Type: application/json' \
   -d '{
-    "testRunId": "unique-test-run-id-1234",
-    "testClass": "com.example.tests.LoginTests",
-    "testMethod": "testLoginWithInvalidCredentials",
-    "timestamp": 1719907200000,
+    "testRunId": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890",
+    "testClass": "com.example.tests.CheckoutTests",
+    "testMethod": "testGuestCheckoutWithInvalidEmail",
+    "startTime": 1719907200000,
+    "endTime": 1719907235000,
+    "durationMillis": 35000,
     "status": "FAILED",
-    "exceptionType": "java.lang.AssertionError: Ожидалось успешное сообщение, но получено сообщение об ошибке",
-    "stackTrace": "Пример стектрейса...\n\tat com.example.tests.LoginTests.testLoginWithInvalidCredentials(LoginTests.java:50)\n\t...",
+    "exceptionType": "org.openqa.selenium.TimeoutException",
+    "exceptionMessage": "Expected condition failed: waiting for visibility of element located by By.cssSelector: .order-summary (tried for 30 second(s) with 500 milliseconds interval)",
+    "stackTrace": "org.openqa.selenium.TimeoutException: ...\n\tat com.example.tests.CheckoutTests.testGuestCheckoutWithInvalidEmail(CheckoutTests.java:75)\n\t...",
     "failedStep": {
-      "action": "Проверка сообщения об ошибке",
+      "stepNumber": 5,
+      "action": "Ожидание появления элемента .order-summary",
       "locatorStrategy": "css",
-      "locatorValue": ".error-message",
-      "confidenceScore": 0.85,
-      "result": "FAILURE"
+      "locatorValue": ".order-summary",
+      "confidenceScore": 0.9,
+      "result": "FAILURE",
+      "errorMessage": "Элемент не появился за 30 секунд."
     },
     "executionPath": [
-      {"action": "Переход на страницу входа", "locatorStrategy": "url", "locatorValue": "/login", "confidenceScore": 0.99, "result": "SUCCESS"},
-      {"action": "Ввод логина", "locatorStrategy": "id", "locatorValue": "username", "confidenceScore": 0.98, "result": "SUCCESS"},
-      {"action": "Ввод пароля", "locatorStrategy": "name", "locatorValue": "password", "confidenceScore": 0.97, "result": "SUCCESS"},
-      {"action": "Нажатие кнопки входа", "locatorStrategy": "xpath", "locatorValue": "//button[@type=\\"submit\\"]", "confidenceScore": 0.96, "result": "SUCCESS"},
-      {"action": "Проверка сообщения об ошибке", "locatorStrategy": "css", "locatorValue": ".error-message", "confidenceScore": 0.85, "result": "FAILURE"}
+      {"action": "Переход на страницу товара", "result": "SUCCESS"},
+      {"action": "Добавление товара в корзину", "result": "SUCCESS"},
+      {"action": "Переход в корзину", "result": "SUCCESS"},
+      {"action": "Ввод невалидного email", "result": "SUCCESS"},
+      {"action": "Ожидание появления элемента .order-summary", "result": "FAILURE"}
     ],
-    "appVersion": "1.0.0",
-    "environment": "QA",
-    "testSuite": "Smoke"
-  }'
-```
+    "appVersion": "2.3.1",
+    "testSuite": "Regression",
+    "testTags": ["checkout", "guest", "P1", "flaky"],
+    "environmentDetails": {
+      "name": "QA",
+      "osType": "Linux",
+      "browserType": "Chrome",
+      "browserVersion": "126.0"
+    },
+    "artifacts": {
+      "screenshotUrls": ["http://artifacts.example.com/run123/failure.png"],
+      "videoUrl": "http://artifacts.example.com/run123/test_video.mp4"
+    },
+    "customMetadata": {
+      "jiraTicket": "PROJ-789",
+      "buildNumber": "build-452",
+      "jenkinsJobUrl": "http://jenkins.example.com/job/Regression/452"
+    }
+  }

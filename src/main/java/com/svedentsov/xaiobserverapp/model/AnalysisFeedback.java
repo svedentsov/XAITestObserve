@@ -47,7 +47,7 @@ public class AnalysisFeedback {
     private LocalDateTime feedbackTimestamp;
 
     /**
-     * Оценка пользователя: {@code true}, если AI-анализ был верным, {@code false} — если неверным.
+     * Оценка пользователя: {@code true}, если AI-анализ был верным, {@code false} - если неверным.
      */
     private Boolean isAiSuggestionCorrect;
 

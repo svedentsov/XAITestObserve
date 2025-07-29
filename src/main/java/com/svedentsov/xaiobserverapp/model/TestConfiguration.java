@@ -14,26 +14,31 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class TestConfiguration {
+
     /**
      * Уникальный идентификатор конфигурации (генерируется автоматически).
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     /**
      * Версия тестируемого приложения.
      */
     @Column(nullable = false)
     private String appVersion;
+
     /**
      * Название окружения, на котором выполнялся тест (например, "QA", "STAGING").
      */
     @Column(nullable = false)
     private String environment;
+
     /**
      * Название тестового набора (suite), к которому относится тест.
      */
     private String testSuite;
+
     /**
      * Уникальное строковое представление конфигурации, сгенерированное на основе
      * версии, окружения и набора тестов. Используется для быстрого поиска.

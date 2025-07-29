@@ -29,15 +29,4 @@ public class AnalysisResultDTO {
 
     @Schema(description = "Сырые данные, на основе которых был сделан вывод (например, тип исключения, шаг)", example = "Exception Type: org.openqa.selenium.StaleElementReferenceException")
     private String rawData;
-
-    public static AnalysisResultDTO fromEntity(AnalysisResult result) {
-        AnalysisResultDTO dto = new AnalysisResultDTO();
-        dto.setId(result.getId());
-        dto.setAnalysisType(result.getAnalysisType());
-        dto.setSuggestedReason(result.getSuggestedReason());
-        dto.setSolution(result.getSolution());
-        dto.setAiConfidence(result.getAiConfidence());
-        dto.setRawData(result.getRawData());
-        return dto;
-    }
 }
