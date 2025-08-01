@@ -47,6 +47,20 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
+        <!-- === SECURITY - Защита приложения === -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+        </dependency>
+        <!-- === WEBSOCKETS for Real-time Updates === -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
         <!-- === API DOCUMENTATION - Документация Swagger/OpenAPI === -->
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -78,28 +92,29 @@
             <scope>provided</scope>
         </dependency>
         <!-- === DATABASE & SERIALIZATION === -->
-        <dependency>
+        <dependency><!-- PostgreSQL - основная база данных для prod и dev -->
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency><!-- H2 - для локальной разработки и тестов. Управляется профилями ниже. -->
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope> <!-- Драйвер нужен только во время выполнения -->
+            <scope>test</scope> <!-- По умолчанию H2 нужна только для тестов -->
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-hibernate6</artifactId>
-            <!-- Версия управляется родительским POM Spring Boot -->
         </dependency>
-        <!-- === JAKARTA EE - Дополнительные API === -->
-        <dependency>
+        <dependency><!-- === JAKARTA EE - Дополнительные API === -->
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <version>${jakarta-annotation.version}</version>
         </dependency>
     </dependencies>
-    <!-- Конфигурация процесса сборки проекта -->
-    <build>
+    <build><!-- Конфигурация процесса сборки проекта -->
         <plugins>
-            <!-- Плагин для сборки исполняемого JAR-файла Spring Boot -->
-            <plugin>
+            <plugin><!-- Плагин для сборки исполняемого JAR-файла Spring Boot -->
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
@@ -111,41 +126,50 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- Плагин для компиляции Java-кода -->
-            <plugin>
+            <plugin><!-- Плагин для компиляции Java-кода -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version> <!-- Используем актуальную версию -->
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <!-- Настройка обработчиков аннотаций. Крайне важна для совместной работы Lombok и MapStruct. -->
-                    <annotationProcessorPaths>
-                        <!-- Обработчик для MapStruct -->
-                        <path>
+                    <annotationProcessorPaths><!-- Настройка обработчиков аннотаций. Крайне важна для совместной работы Lombok и MapStruct. -->
+                        <path><!-- Обработчик для MapStruct -->
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${org.mapstruct.version}</version>
                         </path>
-                        <!-- Обработчик для Lombok -->
-                        <path>
+                        <path><!-- Обработчик для Lombok -->
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
-                        <!-- Связка Lombok и MapStruct -->
-                        <path>
+                        <path><!-- Связка Lombok и MapStruct -->
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok-mapstruct-binding</artifactId>
                             <version>${lombok-mapstruct-binding.version}</version>
                         </path>
                     </annotationProcessorPaths>
-                    <!-- Аргумент компилятора, который указывает MapStruct генерировать мапперы как Spring-компоненты (@Component). -->
-                    <compilerArgs>
+                    <compilerArgs><!-- Аргумент компилятора, который указывает MapStruct генерировать мапперы как Spring-компоненты (@Component). -->
                         <arg>-Amapstruct.defaultComponentModel=spring</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+    <profiles><!-- Профили сборки для управления зависимостями в разных окружениях -->
+        <profile><!-- Профиль для локальной разработки (активен по умолчанию) -->
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency><!-- Для профиля 'dev' добавляем H2 в область видимости runtime, чтобы можно было запускать приложение с H2 из IDE. -->
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

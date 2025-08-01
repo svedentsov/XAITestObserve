@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
         testListTableBody: document.getElementById('testListTableBody'),
     };
 
+    const csrfToken = document.querySelector("meta[name='_csrf']")?.getAttribute("content");
+    const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.getAttribute("content");
+
     const API_ENDPOINTS = {
         statistics: '/api/v1/statistics',
         testDetails: (id) => `/api/v1/tests/${id}`,
@@ -153,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderStatistics(stats) {
         const totalRunsEl = document.getElementById('stats-total-runs');
 
-        // --- ИЗМЕНЕНИЕ: Удалена карточка "Пропущено" ---
         const statsHtml = `
             <div class="stats-grid">
                 <div class="stats-card"><h4>Прогоны</h4><p id="stats-total-runs">${stats.totalRuns || 0}</p></div>
@@ -448,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contentHtml += `</ul></div>`;
         }
 
-        // --- ИЗМЕНЕНИЕ: Блок Теги теперь добавляется здесь, перед Артефактами ---
+        // --- Tags Block ---
         if (testRun.testTags && testRun.testTags.length > 0) {
             contentHtml += `
                 <div class="detail-block">
@@ -491,7 +493,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(API_ENDPOINTS.feedback(analysisId), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                },
                 body: JSON.stringify({ isAiSuggestionCorrect: isCorrect })
             });
             if (!response.ok) throw new Error(`Server responded with status ${response.status}.`);
@@ -624,7 +629,13 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteAllBtn.addEventListener('click', async () => {
                 if (confirm('Вы уверены, что хотите удалить все данные о запусках? Это действие необратимо.')) {
                     try {
-                        const response = await fetch(API_ENDPOINTS.deleteAll, { method: 'DELETE' });
+                        const response = await fetch(API_ENDPOINTS.deleteAll, {
+                            method: 'DELETE',
+                            headers: {
+                                [csrfHeader]: csrfToken
+                            }
+                        });
+
                         if (response.ok) {
                             testDetailsCache.clear();
                             showToast('Все данные успешно удалены. Страница будет перезагружена.', 'success');
@@ -648,7 +659,13 @@ document.addEventListener('DOMContentLoaded', () => {
             createDemoBtn.addEventListener('click', async () => {
                 createDemoBtn.disabled = true;
                 try {
-                    const response = await fetch(API_ENDPOINTS.createDemo, { method: 'POST' });
+                    const response = await fetch(API_ENDPOINTS.createDemo, {
+                        method: 'POST',
+                        headers: {
+                            [csrfHeader]: csrfToken
+                        }
+                    });
+
                     if (!response.ok) throw new Error('Server error during demo creation.');
 
                     const newTestRunDetails = await response.json();
@@ -708,4 +725,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initDashboard();
 });
-

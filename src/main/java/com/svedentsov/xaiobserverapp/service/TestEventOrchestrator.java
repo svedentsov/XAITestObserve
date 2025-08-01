@@ -1,6 +1,7 @@
 package com.svedentsov.xaiobserverapp.service;
 
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
+import com.svedentsov.xaiobserverapp.dto.TestRunDetailDTO;
 import com.svedentsov.xaiobserverapp.mapper.TestRunMapper;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
 import com.svedentsov.xaiobserverapp.model.TestConfiguration;
@@ -9,6 +10,7 @@ import com.svedentsov.xaiobserverapp.repository.TestRunRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,7 @@ public class TestEventOrchestrator {
     private final NotificationService notificationService;
     private final TestRunMapper testRunMapper;
     private final StatisticsService statisticsService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * Асинхронно обрабатывает и сохраняет событие о завершении теста.
@@ -64,6 +67,9 @@ public class TestEventOrchestrator {
         List<AnalysisResult> analysisResults = rcaService.analyzeTestRun(event);
         analysisResults.forEach(testRun::addAnalysisResult);
         TestRun savedTestRun = testRunRepository.save(testRun);
+        TestRunDetailDTO dto = testRunMapper.toDetailDto(savedTestRun);
+        messagingTemplate.convertAndSend("/topic/new-test-run", dto);
+
         log.info("Test run with ID {} and its analysis results have been saved.", savedTestRun.getId());
         if (savedTestRun.getStatus() == TestRun.TestStatus.FAILED) {
             notificationService.notifyAboutFailure(savedTestRun);
