@@ -2,105 +2,105 @@ package com.svedentsov.xaiobserverapp.service;
 
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
+import com.svedentsov.xaiobserverapp.service.xai.XaiServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 /**
- * Сервис для анализа первопричин (Root Cause Analysis - RCA) сбоев тестов.
- * <p>
- * Использует цепочку анализаторов (реализаций {@link FailureAnalyzer}),
- * чтобы определить наиболее вероятную причину сбоя на основе предоставленных данных.
+ * Сервис анализа первопричин (Root Cause Analysis - RCA).
+ * Оркестрирует процесс анализа сбоев тестов. Последовательно применяет
+ * различные стратегии анализа ({@link AnalysisStrategy}). Если ни одна из
+ * rule-based стратегий не сработала, обращается к внешнему XAI-сервису
+ * для получения предиктивного анализа.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RcaService {
 
-    private final List<FailureAnalyzer> ruleBasedAnalyzers;
-    private final RestTemplate restTemplate;
+    private final List<AnalysisStrategy> analysisStrategies;
+    private final XaiServiceClient xaiServiceClient;
 
-    // Лучшая практика: вынести URL в application.properties
-    @Value("${xai.analysis.service.url:http://localhost:8000/predict}")
-    private String mlServiceUrl;
-
+    /**
+     * Выполняет полный анализ события о завершении теста.
+     *
+     * @param event DTO с данными о тестовом запуске.
+     * @return Список результатов анализа. Обычно содержит один результат,
+     * но может быть расширен для возврата нескольких гипотез.
+     */
     public List<AnalysisResult> analyzeTestRun(FailureEventDTO event) {
         List<AnalysisResult> results = new ArrayList<>();
 
-        if ("PASSED".equalsIgnoreCase(event.getStatus())) {
+        if ("PASSED".equalsIgnoreCase(event.status())) {
             results.add(createSuccessfulRunSummary());
             return results;
         }
 
-        // 1. Попробовать найти причину с помощью rule-based анализаторов
-        for (FailureAnalyzer analyzer : ruleBasedAnalyzers) {
-            if (analyzer.canAnalyze(event)) {
-                log.info("Analyzing with rule-based analyzer: {}", analyzer.getClass().getSimpleName());
-                results.add(analyzer.analyze(event));
-                // Если нашли, выходим из цикла и не идем к ML
-                return results;
+        // Пытаемся применить rule-based стратегии
+        for (AnalysisStrategy strategy : analysisStrategies) {
+            var resultOpt = strategy.analyze(event);
+            if (resultOpt.isPresent()) {
+                log.info("Analysis found by rule-based strategy: {}", strategy.getClass().getSimpleName());
+                AnalysisResult result = resultOpt.get();
+                result.setAnalysisTimestamp(LocalDateTime.now());
+                results.add(result);
+                return results; // Возвращаем первый сработавший результат
             }
         }
 
-        // 2. Если ни одно правило не сработало, обращаемся к ML-сервису
-        log.info("No specific rule-based analyzer found. Calling ML analysis service...");
-        try {
-            AnalysisResult mlResult = restTemplate.postForObject(mlServiceUrl, event, AnalysisResult.class);
-            if (mlResult != null && Objects.nonNull(mlResult.getSuggestedReason())) {
-                log.info("Received a valid prediction from ML service.");
-                results.add(mlResult);
-            } else {
-                log.warn("ML service returned null or empty result. Falling back to generic analysis.");
-                results.add(createGeneralFailureSummary(event));
-            }
-        } catch (RestClientException e) {
-            log.error("ML Analysis service call failed: {}. Falling back to generic analysis.", e.getMessage());
-            results.add(createGeneralFailureSummary(event));
-        }
-
-        // 3. Если и ML-сервис недоступен, и правила не сработали, возвращаем самый общий анализ
-        if (results.isEmpty()) {
-            results.add(createGeneralFailureSummary(event));
-        }
-
+        // Если ни одна rule-based стратегия не сработала, обращаемся к внешнему XAI сервису
+        log.info("No specific rule-based strategy found. Calling XAI service as a fallback...");
+        xaiServiceClient.getPrediction(event).ifPresentOrElse(
+                mlResult -> {
+                    log.info("Received prediction from XAI service.");
+                    mlResult.setAnalysisTimestamp(LocalDateTime.now());
+                    results.add(mlResult);
+                },
+                () -> {
+                    // Если и XAI сервис ничего не вернул, создаем общее резюме
+                    log.warn("XAI service did not provide a prediction. Falling back to generic analysis.");
+                    results.add(createGeneralFailureSummary(event));
+                }
+        );
         return results;
     }
 
     /**
      * Создает стандартный результат для успешно пройденного теста.
      *
-     * @return Результат анализа.
+     * @return {@link AnalysisResult} для успешного запуска.
      */
     private AnalysisResult createSuccessfulRunSummary() {
         AnalysisResult ar = new AnalysisResult();
         ar.setAnalysisType("Резюме успешного запуска");
-        ar.setAiConfidence(0.99);
+        ar.setAiConfidence(1.0);
         ar.setSuggestedReason("Тест успешно завершен. Все шаги выполнены корректно.");
         ar.setSolution("Никаких действий не требуется.");
-        ar.setRawData("Статус: PASSED");
+        ar.setAnalysisTimestamp(LocalDateTime.now());
+        ar.setExplanationData(Map.of("status", "PASSED"));
         return ar;
     }
 
     /**
-     * Создает общий результат для сбоя, если ни один конкретный анализатор не сработал.
+     * Создает общий результат для сбоя, если ни один анализатор не сработал.
      *
-     * @param event Событие сбоя.
-     * @return Результат анализа.
+     * @param event DTO события.
+     * @return {@link AnalysisResult} с общей информацией.
      */
     private AnalysisResult createGeneralFailureSummary(FailureEventDTO event) {
         AnalysisResult ar = new AnalysisResult();
         ar.setAnalysisType("Общий анализ сбоя");
         ar.setAiConfidence(0.40);
-        ar.setSuggestedReason("Тест завершился со статусом FAILED, но не удалось определить конкретную причину на основе предоставленных данных (шаг сбоя или тип исключения).");
+        ar.setSuggestedReason("Тест завершился со статусом FAILED, но не удалось определить конкретную причину на основе правил или ответа ML-сервиса.");
         ar.setSolution("Проверьте логи выполнения теста, скриншоты (если они есть) и состояние окружения. Возможно, проблема связана с инфраструктурой или внешними сервисами.");
-        ar.setRawData("Статус: " + event.getStatus());
+        ar.setAnalysisTimestamp(LocalDateTime.now());
+        ar.setExplanationData(Map.of("status", event.status(), "fallback_reason", "No specific analyzer triggered"));
         return ar;
     }
 }

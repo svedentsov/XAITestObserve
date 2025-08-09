@@ -1,5 +1,7 @@
 package com.svedentsov.xaiobserverapp.service;
 
+import com.svedentsov.xaiobserverapp.dto.DailyTrendDataDTO;
+import com.svedentsov.xaiobserverapp.dto.SlowTestDTO;
 import com.svedentsov.xaiobserverapp.dto.StatisticsDTO;
 import com.svedentsov.xaiobserverapp.model.TestRun;
 import com.svedentsov.xaiobserverapp.repository.TestRunRepository;
@@ -19,10 +21,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Сервис для расчета и предоставления статистики по тестовым запускам.
- * <p>
- * Активно использует кэширование для повышения производительности, так как
- * расчет статистики может быть ресурсоемкой операцией.
+ * Сервис для расчета и предоставления статистических данных по тестовым запускам.
+ * Результаты вычислений кэшируются для повышения производительности.
  */
 @Slf4j
 @Service
@@ -32,11 +32,10 @@ public class StatisticsService {
     private final TestRunRepository testRunRepository;
 
     /**
-     * Рассчитывает и возвращает общую статистику.
-     * <p>
-     * Результат выполнения этого метода кэшируется в кэше "statistics".
+     * Рассчитывает и возвращает общую статистику по всем тестовым запускам.
+     * Результат этого метода кэшируется в кэше "statistics".
      *
-     * @return DTO {@link StatisticsDTO} с общей статистикой.
+     * @return {@link StatisticsDTO} с агрегированными данными.
      */
     @Transactional(readOnly = true)
     @Cacheable("statistics")
@@ -61,16 +60,15 @@ public class StatisticsService {
                         (oldValue, newValue) -> oldValue,
                         LinkedHashMap::new
                 ));
-        List<StatisticsDTO.DailyTrendData> dailyPassRateTrend = calculateDailyPassRateTrend(allRuns, 30);
-        List<StatisticsDTO.SlowTestDTO> topSlowTests = calculateTopSlowTests(allRuns, 5);
+        List<DailyTrendDataDTO> dailyPassRateTrend = calculateDailyPassRateTrend(allRuns, 30);
+        List<SlowTestDTO> topSlowTests = calculateTopSlowTests(allRuns, 5);
         return new StatisticsDTO(total, passed, failed, skipped, passRate, failingTests, dailyPassRateTrend, topSlowTests);
     }
 
     /**
      * Очищает кэш со статистикой.
-     * <p>
-     * Этот метод должен вызываться каждый раз, когда данные, влияющие на статистику,
-     * изменяются (например, после сохранения нового тестового запуска).
+     * Этот метод должен вызываться после любого изменения данных,
+     * которое может повлиять на статистику (например, добавление нового тестового запуска).
      */
     @CacheEvict(value = "statistics", allEntries = true)
     public void clearStatisticsCache() {
@@ -80,11 +78,11 @@ public class StatisticsService {
     /**
      * Рассчитывает тренд Pass Rate по дням за указанный период.
      *
-     * @param allRuns Список всех запусков.
-     * @param days    Количество дней для анализа.
-     * @return Список данных для построения графика.
+     * @param allRuns список всех тестовых запусков.
+     * @param days    количество дней для анализа.
+     * @return список {@link DailyTrendDataDTO}.
      */
-    private List<StatisticsDTO.DailyTrendData> calculateDailyPassRateTrend(List<TestRun> allRuns, int days) {
+    private List<DailyTrendDataDTO> calculateDailyPassRateTrend(List<TestRun> allRuns, int days) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
         Map<LocalDate, List<TestRun>> runsByDate = allRuns.stream()
@@ -93,27 +91,27 @@ public class StatisticsService {
                         run.getTimestamp().toLocalDate().isBefore(endDate.plusDays(1)))
                 .collect(Collectors.groupingBy(run -> run.getTimestamp().toLocalDate()));
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        List<StatisticsDTO.DailyTrendData> trendData = new java.util.ArrayList<>();
+        List<DailyTrendDataDTO> trendData = new java.util.ArrayList<>();
 
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
             List<TestRun> runsOnDate = runsByDate.getOrDefault(date, List.of());
             long totalOnDate = runsOnDate.size();
             long passedOnDate = runsOnDate.stream().filter(r -> r.getStatus() == TestRun.TestStatus.PASSED).count();
             double passRateOnDate = (totalOnDate > 0) ? (double) passedOnDate / totalOnDate * 100.0 : 0.0;
-            trendData.add(new StatisticsDTO.DailyTrendData(date.format(formatter), passRateOnDate, totalOnDate));
+            trendData.add(new DailyTrendDataDTO(date.format(formatter), passRateOnDate, totalOnDate));
         }
 
         return trendData;
     }
 
     /**
-     * Рассчитывает топ самых медленных тестов по средней длительности выполнения.
+     * Рассчитывает топ самых медленных тестов на основе их средней длительности.
      *
-     * @param allRuns Список всех запусков.
-     * @param limit   Количество тестов в топе.
-     * @return Список DTO с информацией о медленных тестах.
+     * @param allRuns список всех тестовых запусков.
+     * @param limit   количество тестов для возврата.
+     * @return список {@link SlowTestDTO}.
      */
-    private List<StatisticsDTO.SlowTestDTO> calculateTopSlowTests(List<TestRun> allRuns, int limit) {
+    private List<SlowTestDTO> calculateTopSlowTests(List<TestRun> allRuns, int limit) {
         return allRuns.stream()
                 .filter(run -> run.getTestMethod() != null && !run.getTestMethod().isEmpty())
                 .collect(Collectors.groupingBy(
@@ -122,7 +120,7 @@ public class StatisticsService {
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue(Comparator.reverseOrder()))
                 .limit(limit)
-                .map(entry -> new StatisticsDTO.SlowTestDTO(entry.getKey(), entry.getValue()))
+                .map(entry -> new SlowTestDTO(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 }

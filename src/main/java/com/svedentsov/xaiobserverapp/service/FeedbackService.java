@@ -27,7 +27,6 @@ public class FeedbackService {
 
     /**
      * Обрабатывает и сохраняет отзыв пользователя.
-     * <p>
      * Находит соответствующий результат анализа, обновляет его на основе отзыва
      * и создает новую запись с деталями отзыва.
      *
@@ -37,21 +36,25 @@ public class FeedbackService {
      * @throws ResourceNotFoundException если результат анализа с указанным ID не найден.
      */
     @Transactional
-    public AnalysisFeedback processFeedback(String analysisId, AnalysisFeedbackDTO feedbackDTO) {
-        log.info("Processing feedback for analysis ID {}: isCorrect={}", analysisId, feedbackDTO.getIsAiSuggestionCorrect());
+    public AnalysisFeedback processFeedback(String analysisId, AnalysisFeedbackDTO feedbackDTO) { // Теперь класс будет найден
+        log.info("Processing feedback for analysis ID {}: isCorrect={}", analysisId, feedbackDTO.isAiSuggestionCorrect());
+
         AnalysisResult analysisResult = analysisResultRepository.findById(analysisId)
                 .orElseThrow(() -> new ResourceNotFoundException("Analysis with ID " + analysisId + " not found"));
-        if (feedbackDTO.getIsAiSuggestionCorrect() != null) {
-            analysisResult.setUserConfirmedCorrect(feedbackDTO.getIsAiSuggestionCorrect());
+
+        if (feedbackDTO.isAiSuggestionCorrect() != null) {
+            analysisResult.setUserConfirmedCorrect(feedbackDTO.isAiSuggestionCorrect());
         }
+
         AnalysisFeedback feedback = new AnalysisFeedback();
         feedback.setAnalysisResult(analysisResult);
-        feedback.setIsAiSuggestionCorrect(feedbackDTO.getIsAiSuggestionCorrect());
-        feedback.setUserProvidedReason(feedbackDTO.getUserProvidedReason());
-        feedback.setUserProvidedSolution(feedbackDTO.getUserProvidedSolution());
-        feedback.setComments(feedbackDTO.getComments());
-        feedback.setUserId(StringUtils.hasText(feedbackDTO.getUserId()) ? feedbackDTO.getUserId() : "anonymous");
+        feedback.setIsAiSuggestionCorrect(feedbackDTO.isAiSuggestionCorrect());
+        feedback.setUserProvidedReason(feedbackDTO.userProvidedReason());
+        feedback.setUserProvidedSolution(feedbackDTO.userProvidedSolution());
+        feedback.setComments(feedbackDTO.comments());
+        feedback.setUserId(StringUtils.hasText(feedbackDTO.userId()) ? feedbackDTO.userId() : "anonymous");
         feedback.setFeedbackTimestamp(LocalDateTime.now());
+
         return analysisFeedbackRepository.save(feedback);
     }
 }

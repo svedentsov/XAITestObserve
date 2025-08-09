@@ -10,10 +10,9 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Фабрика для создания демонстрационных данных.
- * <p>
- * Генерирует случайные, но правдоподобные события о завершении тестов
- * для наполнения базы данных и демонстрации работы системы.
+ * Сервис-фабрика для создания демонстрационных данных.
+ * Генерирует случайные события о завершении тестов для наполнения
+ * системы данными при демонстрации или тестировании.
  */
 @Service
 public class DemoDataFactory {
@@ -73,22 +72,22 @@ public class DemoDataFactory {
     private static final List<String> TRIGGERED_BY = List.of("Jenkins CI", "GitHub Actions", "Manual Run (user: admin)");
 
     /**
-     * Генерирует одно случайное событие о завершении теста.
+     * Генерирует случайное событие о завершении теста (DTO).
      *
-     * @return DTO {@link FailureEventDTO} с заполненными случайными данными.
+     * @return {@link FailureEventDTO} с рандомизированными данными.
      */
     public FailureEventDTO generateRandomEvent() {
-        boolean isFailed = ThreadLocalRandom.current().nextDouble() < 0.6; // 60% шанс на FAILED
+        // Основные данные
+        String testRunId = UUID.randomUUID().toString();
+        boolean isFailed = ThreadLocalRandom.current().nextDouble() < 0.6;
         long currentTime = System.currentTimeMillis();
         long startTime = currentTime - ThreadLocalRandom.current().nextLong(5000, 60000);
         long endTime = currentTime;
         long durationMillis = endTime - startTime;
+        String status = isFailed ? "FAILED" : "PASSED";
 
-        FailureEventDTO event = new FailureEventDTO();
-        event.setTestRunId(UUID.randomUUID().toString());
+        // Данные теста
         String testClass = getRandomElement(TEST_CLASSES);
-        event.setTestClass(testClass);
-
         String testMethod;
         if (testClass.contains("Login")) {
             testMethod = getRandomElement(TEST_METHODS_LOGIN);
@@ -99,129 +98,75 @@ public class DemoDataFactory {
         } else {
             testMethod = getRandomElement(TEST_METHODS_SEARCH);
         }
-        event.setTestMethod(testMethod);
 
-        event.setStartTime(startTime);
-        event.setEndTime(endTime);
-        event.setDurationMillis(durationMillis);
-        event.setStatus(isFailed ? "FAILED" : "PASSED");
-
-        // Демо-конфигурация
-        event.setAppVersion(getRandomElement(APP_VERSIONS));
+        // Конфигурация
+        String appVersion = getRandomElement(APP_VERSIONS);
         String envName = getRandomElement(ENVIRONMENTS);
-        event.setTestSuite(getRandomElement(TEST_SUITES));
+        String testSuite = getRandomElement(TEST_SUITES);
+        Set<String> tagsSet = new HashSet<>();
+        tagsSet.add(getRandomElement(PRIORITY_TAGS));
+        tagsSet.add(getRandomElement(FEATURE_TAGS));
+        tagsSet.add(isFailed ? "flaky" : "stable");
+        tagsSet.add("automated");
+        List<String> testTags = new ArrayList<>(tagsSet);
 
-        Set<String> tags = new HashSet<>();
-        tags.add(getRandomElement(PRIORITY_TAGS));
-        tags.add(getRandomElement(FEATURE_TAGS));
-        tags.add(isFailed ? "flaky" : "stable");
-        tags.add("automated");
-        event.setTestTags(new ArrayList<>(tags));
+        // Environment Details
+        EnvironmentDetailsDTO envDetails = new EnvironmentDetailsDTO(
+                envName, getRandomElement(OS_TYPES), getRandomElement(OS_VERSIONS),
+                getRandomElement(BROWSER_TYPES), getRandomElement(BROWSER_VERSIONS),
+                getRandomElement(SCREEN_RESOLUTIONS), getRandomElement(DEVICE_TYPES),
+                "Desktop".equals(getRandomElement(DEVICE_TYPES)) ? "Desktop PC" : "iPhone 15 Pro",
+                "126.0.6478.127", "https://" + envName.toLowerCase() + ".myapp.com"
+        );
 
-        EnvironmentDetailsDTO envDetails = new EnvironmentDetailsDTO();
-        envDetails.setName(envName);
-        envDetails.setOsType(getRandomElement(OS_TYPES));
-        envDetails.setOsVersion(getRandomElement(OS_VERSIONS));
-        envDetails.setBrowserType(getRandomElement(BROWSER_TYPES));
-        envDetails.setBrowserVersion(getRandomElement(BROWSER_VERSIONS));
-        envDetails.setScreenResolution(getRandomElement(SCREEN_RESOLUTIONS));
-        envDetails.setDeviceType(getRandomElement(DEVICE_TYPES));
-        envDetails.setDeviceName(envDetails.getDeviceType().equals("Mobile") ? "iPhone 15 Pro" : "Desktop PC");
-        envDetails.setDriverVersion("126.0.6478.127");
-        envDetails.setAppBaseUrl("https://" + envName.toLowerCase() + ".myapp.com");
-        event.setEnvironmentDetails(envDetails);
+        // Artifacts
+        String artifactBaseUrl = "http://artifacts.example.com/" + testRunId;
+        TestArtifactsDTO artifacts = new TestArtifactsDTO(
+                List.of(artifactBaseUrl + "/screenshot_start.png", artifactBaseUrl + (isFailed ? "/screenshot_fail.png" : "/screenshot_end.png")),
+                artifactBaseUrl + "/video.mp4", List.of(artifactBaseUrl + "/app.log"),
+                ThreadLocalRandom.current().nextBoolean() ? artifactBaseUrl + "/console.log" : null,
+                ThreadLocalRandom.current().nextBoolean() ? artifactBaseUrl + "/network.har" : null
+        );
 
-        TestArtifactsDTO artifacts = new TestArtifactsDTO();
-        String artifactBaseUrl = "http://artifacts.example.com/" + event.getTestRunId();
-        artifacts.setScreenshotUrls(List.of(
-                artifactBaseUrl + "/screenshot_start.png",
-                artifactBaseUrl + (isFailed ? "/screenshot_fail.png" : "/screenshot_end.png")
-        ));
-        artifacts.setVideoUrl(artifactBaseUrl + "/video.mp4");
-        artifacts.setAppLogUrls(List.of(artifactBaseUrl + "/app.log", artifactBaseUrl + "/backend.log"));
-        if (ThreadLocalRandom.current().nextBoolean()) {
-            artifacts.setBrowserConsoleLogUrl(artifactBaseUrl + "/console.log");
-        }
-        if (ThreadLocalRandom.current().nextBoolean()) {
-            artifacts.setHarFileUrl(artifactBaseUrl + "/network.har");
-        }
-        event.setArtifacts(artifacts);
-
+        // Metadata
         Map<String, String> customMetadata = new HashMap<>();
         customMetadata.put("buildNumber", "build-" + ThreadLocalRandom.current().nextInt(1000, 5000));
-        customMetadata.put("jenkinsJobUrl", "http://jenkins.example.com/job/" + event.getTestSuite() + "/" + customMetadata.get("buildNumber"));
+        customMetadata.put("jenkinsJobUrl", "http://jenkins.example.com/job/" + testSuite + "/" + customMetadata.get("buildNumber"));
         customMetadata.put("jiraTicket", getRandomElement(JIRA_TICKETS));
         customMetadata.put("gitBranch", getRandomElement(GIT_BRANCHES));
-        customMetadata.put("commitHash", UUID.randomUUID().toString().replace("-", "").substring(0, 8));
-        customMetadata.put("triggeredBy", getRandomElement(TRIGGERED_BY));
-        event.setCustomMetadata(customMetadata);
 
+        // Execution Path & Failure Details
         List<AiDecisionMetadata> executionPath = new ArrayList<>();
         long currentStepTime = startTime;
+        executionPath.add(createStep(1, "Навигация на страницу", "url", "/login", "SUCCESS", null, null, 0.99, currentStepTime, 1500));
+        currentStepTime += 1500;
+        executionPath.add(createStep(2, "Ввод логина", "id", "username", "SUCCESS", "user123", null, 0.98, currentStepTime, 500));
 
-        // Step 1: Navigate
-        executionPath.add(createStep(1, "Навигация на страницу " + (testClass.contains("Login") ? "входа" : "главную"),
-                "url", (testClass.contains("Login") ? "/login" : "/"), "SUCCESS", null,
-                null, 0.99, currentStepTime, ThreadLocalRandom.current().nextLong(500, 2000),
-                "{\"page_load_strategy\": \"normal\"}"));
-        currentStepTime += executionPath.get(0).getStepDurationMillis();
-
-        if (testClass.contains("Login")) {
-            executionPath.add(createStep(2, "Ввод логина", "id", "username", "SUCCESS", "user123", null, 0.98,
-                    currentStepTime, ThreadLocalRandom.current().nextLong(200, 800), "{\"element_visible\": true}"));
-            currentStepTime += executionPath.get(1).getStepDurationMillis();
-
-            executionPath.add(createStep(3, "Ввод пароля", "name", "password", "SUCCESS", "pa$$w0rd", null, 0.97,
-                    currentStepTime, ThreadLocalRandom.current().nextLong(200, 800), "{\"element_visible\": true, \"is_masked\": true}"));
-            currentStepTime += executionPath.get(2).getStepDurationMillis();
-        } else {
-            executionPath.add(createStep(2, "Клик по кнопке 'Добавить в корзину'", "css", ".add-to-cart", "SUCCESS", null, null, 0.96,
-                    currentStepTime, ThreadLocalRandom.current().nextLong(300, 1500), "{\"element_visible\": true}"));
-            currentStepTime += executionPath.get(1).getStepDurationMillis();
-        }
+        AiDecisionMetadata failedStep = null;
+        String exceptionType = null;
+        String exceptionMessage = null;
+        String stackTrace = null;
 
         if (isFailed) {
-            String randomExceptionType = getRandomElement(EXCEPTION_TYPES);
-            String randomExceptionMessage = getRandomElement(EXCEPTION_MESSAGES);
-
-            AiDecisionMetadata failedStep = createStep(executionPath.size() + 1, "Проверка заголовка страницы", "xpath",
-                    "//h1[contains(text(), 'Dashboard')]", "FAILURE", null, randomExceptionMessage,
-                    ThreadLocalRandom.current().nextDouble(0.4, 0.8), currentStepTime,
-                    endTime - currentStepTime, "{\"expected_text\": \"Dashboard\", \"actual_text\": \"Login Page\"}");
-
+            exceptionType = getRandomElement(EXCEPTION_TYPES);
+            exceptionMessage = getRandomElement(EXCEPTION_MESSAGES);
+            stackTrace = generateStackTrace(testClass, testMethod, exceptionType);
+            failedStep = createStep(3, "Клик по кнопке Войти", "css", ".login-btn", "FAILURE", null, exceptionMessage, 0.7, currentStepTime, 5000);
             executionPath.add(failedStep);
-            event.setFailedStep(failedStep);
-            event.setExceptionType(randomExceptionType);
-            event.setExceptionMessage(randomExceptionMessage);
-            event.setStackTrace(generateStackTrace(event.getTestClass(), event.getTestMethod(), randomExceptionType));
         } else {
-            executionPath.add(createStep(executionPath.size() + 1, "Проверка сообщения об успехе", "css", ".success-toast", "SUCCESS",
-                    null, null, 0.99, currentStepTime, endTime - currentStepTime,
-                    "{\"toast_message\": \"Операция выполнена успешно\"}"));
+            executionPath.add(createStep(3, "Клик по кнопке Войти", "css", ".login-btn", "SUCCESS", null, null, 0.99, currentStepTime, 800));
         }
-        event.setExecutionPath(executionPath);
-        return event;
+
+        return new FailureEventDTO(
+                testRunId, testClass, testMethod, startTime, endTime, durationMillis,
+                status, exceptionType, exceptionMessage, stackTrace, failedStep,
+                executionPath, appVersion, envDetails, testSuite, testTags, artifacts, customMetadata
+        );
     }
 
-    /**
-     * Вспомогательный метод для создания одного шага выполнения теста.
-     *
-     * @param number          Порядковый номер шага.
-     * @param action          Описание действия.
-     * @param locatorStrategy Стратегия поиска.
-     * @param locatorValue    Значение локатора.
-     * @param result          Результат выполнения шага.
-     * @param interactedText  Текст, с которым взаимодействовали.
-     * @param errorMessage    Сообщение об ошибке (если есть).
-     * @param confidence      Уверенность AI.
-     * @param startTime       Время начала шага.
-     * @param duration        Длительность шага.
-     * @param additionalData  Дополнительные данные.
-     * @return Заполненный объект {@link AiDecisionMetadata}.
-     */
     private AiDecisionMetadata createStep(int number, String action, String locatorStrategy, String locatorValue,
                                           String result, String interactedText, String errorMessage, double confidence,
-                                          long startTime, long duration, String additionalData) {
+                                          long startTime, long duration) {
         AiDecisionMetadata step = new AiDecisionMetadata();
         step.setStepNumber(number);
         step.setAction(action);
@@ -234,40 +179,15 @@ public class DemoDataFactory {
         step.setStepStartTime(startTime);
         step.setStepEndTime(startTime + duration);
         step.setStepDurationMillis(duration);
-        step.setAdditionalStepData(additionalData);
+        step.setAdditionalStepData("{\"element_visible\": true}");
         return step;
     }
 
-    /**
-     * Вспомогательный метод для получения случайного элемента из списка.
-     *
-     * @param list Список для выбора.
-     * @param <T>  Тип элементов в списке.
-     * @return Случайный элемент из списка.
-     */
     private <T> T getRandomElement(List<T> list) {
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));
     }
 
-    /**
-     * Генерирует фиктивный, но правдоподобный стек-трейс для демонстрационных целей.
-     *
-     * @param testClass     Класс теста.
-     * @param testMethod    Метод теста.
-     * @param exceptionType Тип исключения.
-     * @return Строка, имитирующая стек-трейс.
-     */
     private String generateStackTrace(String testClass, String testMethod, String exceptionType) {
-        return String.format("%s: %s\n" +
-                        "\tat %s.%s(TestClass.java:%d)\n" +
-                        "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n" +
-                        "\tat org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)\n" +
-                        "\tat com.example.pages.BasePage.clickElement(BasePage.java:42)\n" +
-                        "\tat com.example.steps.LoginSteps.verifyDashboardHeader(LoginSteps.java:35)\n" +
-                        "\tat %s.%s(TestClass.java:%d)\n" +
-                        "\t...",
-                exceptionType, getRandomElement(EXCEPTION_MESSAGES),
-                testClass, testMethod, ThreadLocalRandom.current().nextInt(20, 50),
-                testClass, testMethod, ThreadLocalRandom.current().nextInt(51, 100));
+        return String.format("%s: %s\n\tat %s.%s(TestClass.java:42)", exceptionType, getRandomElement(EXCEPTION_MESSAGES), testClass, testMethod);
     }
 }

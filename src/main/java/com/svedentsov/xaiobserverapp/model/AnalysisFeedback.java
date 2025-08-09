@@ -1,21 +1,21 @@
 package com.svedentsov.xaiobserverapp.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Сущность, представляющая обратную связь от пользователя по результату AI-анализа.
- * <p>
  * Хранит оценку пользователя (был ли анализ корректным), его комментарии и
  * альтернативные предположения о причине и решении проблемы. Эти данные
  * могут быть использованы для дообучения аналитических моделей.
  */
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = "analysisResult")
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnalysisFeedback {
@@ -68,4 +68,17 @@ public class AnalysisFeedback {
      */
     @Column(length = 1000)
     private String comments;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AnalysisFeedback that = (AnalysisFeedback) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

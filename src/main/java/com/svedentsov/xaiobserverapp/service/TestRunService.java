@@ -7,16 +7,16 @@ import com.svedentsov.xaiobserverapp.repository.TestRunRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
- * Сервис для выполнения основных CRUD-операций с тестовыми запусками.
+ * Сервис для выполнения операций с сущностями {@link TestRun}.
+ * Предоставляет методы для получения, удаления и пагинации тестовых запусков.
  */
 @Slf4j
 @Service
@@ -28,20 +28,21 @@ public class TestRunService {
     private final TestRunMapper testRunMapper;
 
     /**
-     * Возвращает все тестовые запуски, отсортированные по времени в порядке убывания.
+     * Получает страницу с тестовыми запусками.
      *
-     * @return Список сущностей {@link TestRun}.
+     * @param pageable объект с параметрами пагинации и сортировки.
+     * @return {@link Page} с {@link TestRunDetailDTO}.
      */
     @Transactional(readOnly = true)
-    public List<TestRun> getAllTestRunsOrderedByTimestampDesc() {
-        return testRunRepository.findAllByOrderByTimestampDesc();
+    public Page<TestRunDetailDTO> getAllTestRunsPaginated(Pageable pageable) {
+        return testRunRepository.findAll(pageable).map(testRunMapper::toDetailDto);
     }
 
     /**
-     * Находит тестовый запуск по его ID.
+     * Получает детальную информацию о тестовом запуске по его ID.
      *
-     * @param id Уникальный идентификатор запуска.
-     * @return Optional с найденной сущностью {@link TestRun}.
+     * @param id Уникальный идентификатор тестового запуска.
+     * @return {@link Optional} с сущностью {@link TestRun}, если она найдена.
      */
     @Transactional(readOnly = true)
     public Optional<TestRun> getTestRunById(String id) {
@@ -49,30 +50,16 @@ public class TestRunService {
     }
 
     /**
-     * Удаляет все тестовые запуски и очищает связанные кэши.
+     * Удаляет все тестовые запуски из базы данных.
+     * Также очищает связанный кэш статистики.
      */
     @Transactional
     public void deleteAllTestRuns() {
         testRunRepository.deleteAll();
         log.info("All TestRun entities have been deleted.");
-        // Очистка кэша статистики
         Optional.ofNullable(cacheManager.getCache("statistics")).ifPresent(cache -> {
             cache.clear();
             log.info("Statistics cache has been cleared.");
         });
-    }
-
-    /**
-     * Возвращает список всех тестовых запусков за сегодняшний день.
-     *
-     * @return Список DTO {@link TestRunDetailDTO}.
-     */
-    @Transactional(readOnly = true)
-    public List<TestRunDetailDTO> getTestRunsForToday() {
-        LocalDate today = LocalDate.now();
-        List<TestRun> runs = testRunRepository.findByTimestampBetween(today.atStartOfDay(), today.plusDays(1).atStartOfDay());
-        return runs.stream()
-                .map(testRunMapper::toDetailDto)
-                .collect(Collectors.toList());
     }
 }

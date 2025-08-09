@@ -20,16 +20,13 @@
     <!-- Свойства проекта. Используются для централизованного управления версиями зависимостей и другими параметрами. -->
     <properties>
         <java.version>21</java.version>
-        <springdoc.version>2.5.0</springdoc.version> <!-- Версия для Swagger/OpenAPI -->
-        <okhttp.version>4.12.0</okhttp.version>
+        <springdoc.version>2.5.0</springdoc.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
         <lombok.version>1.18.30</lombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-        <jakarta-annotation.version>2.1.1</jakarta-annotation.version>
     </properties>
-    <!-- Основной блок, определяющий зависимости проекта -->
-    <dependencies>
+    <dependencies><!-- Основной блок, определяющий зависимости проекта -->
         <!-- === STARTERS - Основные зависимости Spring Boot === -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -100,21 +97,31 @@
         <dependency><!-- H2 - для локальной разработки и тестов. Управляется профилями ниже. -->
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope> <!-- По умолчанию H2 нужна только для тестов -->
+            <scope>runtime</scope> <!-- Изменено на runtime, так как используется и в dev-профиле -->
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-hibernate6</artifactId>
         </dependency>
-        <dependency><!-- === JAKARTA EE - Дополнительные API === -->
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <version>${jakarta-annotation.version}</version>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+        </dependency>
+        <!-- === TESTING - Зависимости для тестов === -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-    <build><!-- Конфигурация процесса сборки проекта -->
+    <build>
         <plugins>
-            <plugin><!-- Плагин для сборки исполняемого JAR-файла Spring Boot -->
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
@@ -157,19 +164,17 @@
             </plugin>
         </plugins>
     </build>
-    <profiles><!-- Профили сборки для управления зависимостями в разных окружениях -->
-        <profile><!-- Профиль для локальной разработки (активен по умолчанию) -->
+    <!--
+        Примечание: профили maven могут быть полезны для разделения конфигураций,
+        но в данном случае зависимость H2 вынесена в основной блок <dependencies> со
+        scope=runtime, так как она используется по умолчанию. Это упрощает pom.xml.
+    -->
+    <profiles>
+        <profile>
             <id>dev</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
-            <dependencies>
-                <dependency><!-- Для профиля 'dev' добавляем H2 в область видимости runtime, чтобы можно было запускать приложение с H2 из IDE. -->
-                    <groupId>com.h2database</groupId>
-                    <artifactId>h2</artifactId>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 </project>

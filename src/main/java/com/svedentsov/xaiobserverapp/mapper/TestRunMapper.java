@@ -1,7 +1,11 @@
 package com.svedentsov.xaiobserverapp.mapper;
 
+import com.svedentsov.xaiobserverapp.dto.EnvironmentDetailsDTO;
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
+import com.svedentsov.xaiobserverapp.dto.TestArtifactsDTO;
 import com.svedentsov.xaiobserverapp.dto.TestRunDetailDTO;
+import com.svedentsov.xaiobserverapp.model.EmbeddableEnvironmentDetails;
+import com.svedentsov.xaiobserverapp.model.EmbeddableTestArtifacts;
 import com.svedentsov.xaiobserverapp.model.TestRun;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -12,34 +16,24 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 /**
- * Основной MapStruct маппер для преобразований, связанных с тестовыми запусками.
- * Конвертирует {@link FailureEventDTO} в сущность {@link TestRun} и {@link TestRun} в {@link TestRunDetailDTO}.
+ * MapStruct маппер для преобразования между DTO событий {@link FailureEventDTO},
+ * сущностью {@link TestRun} и DTO детальной информации {@link TestRunDetailDTO}.
  */
 @Mapper(componentModel = "spring", uses = {AnalysisResultMapper.class, TestConfigurationMapper.class})
 public interface TestRunMapper {
-
     /**
-     * Преобразует входящее событие о завершении теста в сущность для сохранения в БД.
+     * Преобразует {@link FailureEventDTO} в сущность {@link TestRun}.
      *
-     * @param dto DTO события {@link FailureEventDTO}.
-     * @return Сущность {@link TestRun}.
+     * @param dto DTO события завершения теста.
+     * @return Сущность TestRun, готовая к сохранению.
      */
     @Mapping(target = "id", source = "testRunId")
     @Mapping(target = "startTime", source = "startTime", qualifiedByName = "longToLocalDateTime")
     @Mapping(target = "endTime", source = "endTime", qualifiedByName = "longToLocalDateTime")
     @Mapping(target = "timestamp", source = "endTime", qualifiedByName = "longToLocalDateTime")
-    @Mapping(target = "status", expression = "java(TestRun.TestStatus.valueOf(dto.getStatus().toUpperCase()))")
-    @Mapping(target = "environment", source = "environmentDetails.name")
-    @Mapping(target = "testClass", source = "testClass")
-    @Mapping(target = "testMethod", source = "testMethod")
-    @Mapping(target = "durationMillis", source = "durationMillis")
-    @Mapping(target = "exceptionType", source = "exceptionType")
-    @Mapping(target = "exceptionMessage", source = "exceptionMessage")
-    @Mapping(target = "stackTrace", source = "stackTrace")
+    @Mapping(target = "status", expression = "java(com.svedentsov.xaiobserverapp.model.TestRun.TestStatus.fromString(dto.status()))")
     @Mapping(target = "failedStep", source = "failedStep")
     @Mapping(target = "executionPath", source = "executionPath")
-    @Mapping(target = "appVersion", source = "appVersion")
-    @Mapping(target = "testSuite", source = "testSuite")
     @Mapping(target = "testTags", source = "testTags")
     @Mapping(target = "environmentDetails", source = "environmentDetails")
     @Mapping(target = "artifacts", source = "artifacts")
@@ -49,18 +43,35 @@ public interface TestRunMapper {
     TestRun toEntity(FailureEventDTO dto);
 
     /**
-     * Преобразует сущность тестового запуска в детальный DTO для ответа клиенту.
+     * Преобразует сущность {@link TestRun} в {@link TestRunDetailDTO} для отправки через API.
      *
-     * @param entity Сущность {@link TestRun}.
-     * @return Детальный DTO {@link TestRunDetailDTO}.
+     * @param entity Сущность тестового запуска из базы данных.
+     * @return Детальное DTO.
      */
+    @Mapping(source = "configuration", target = "configuration")
     TestRunDetailDTO toDetailDto(TestRun entity);
 
     /**
-     * Вспомогательный метод для конвертации времени из long (Unix epoch milliseconds) в LocalDateTime.
+     * Преобразует {@link EnvironmentDetailsDTO} во встраиваемый объект {@link EmbeddableEnvironmentDetails}.
+     *
+     * @param dto DTO с деталями окружения.
+     * @return Встраиваемый объект для сущности.
+     */
+    EmbeddableEnvironmentDetails toEmbeddable(EnvironmentDetailsDTO dto);
+
+    /**
+     * Преобразует {@link TestArtifactsDTO} во встраиваемый объект {@link EmbeddableTestArtifacts}.
+     *
+     * @param dto DTO с артефактами.
+     * @return Встраиваемый объект для сущности.
+     */
+    EmbeddableTestArtifacts toEmbeddable(TestArtifactsDTO dto);
+
+    /**
+     * Пользовательский метод для преобразования времени в миллисекундах (Unix epoch) в {@link LocalDateTime}.
      *
      * @param epochMilli Время в миллисекундах.
-     * @return Объект {@link LocalDateTime} или null, если входное значение некорректно.
+     * @return Объект LocalDateTime или null, если входное значение некорректно.
      */
     @Named("longToLocalDateTime")
     default LocalDateTime longToLocalDateTime(long epochMilli) {

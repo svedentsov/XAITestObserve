@@ -1,0 +1,4 @@
+databaseChangeLog:
+  - include:
+      file: db/migration/V1__init_schema.sql
+      # relativeToChangelogFile: true # Можно использовать, если файлы в той же директории

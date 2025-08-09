@@ -2,47 +2,36 @@ package com.svedentsov.xaiobserverapp.service.impl;
 
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
-import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
+import com.svedentsov.xaiobserverapp.service.AnalysisStrategy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * Общий анализатор исключений, который используется как "запасной" вариант.
- * <p>
- * Этот анализатор имеет самый низкий приоритет и срабатывает только в том случае,
- * если ни один из более специфичных анализаторов не смог обработать событие.
- * Он просто сообщает о типе возникшего исключения.
+ * Общая (fallback) стратегия анализа.
+ * Срабатывает, если ни одна из более специфичных стратегий не смогла обработать сбой.
+ * Этот анализатор просто извлекает тип исключения и предлагает общие рекомендации.
+ * Имеет самый низкий приоритет выполнения.
  */
 @Component
-@Order(100)
-public class GenericExceptionAnalyzer implements FailureAnalyzer {
+@Order(100) // Самый низкий приоритет, срабатывает в последнюю очередь
+public class GenericExceptionAnalyzer implements AnalysisStrategy {
 
-    /**
-     * Проверяет, содержит ли событие какой-либо тип исключения.
-     *
-     * @param event DTO события сбоя.
-     * @return {@code true}, если поле {@code exceptionType} не пустое, иначе {@code false}.
-     */
     @Override
-    public boolean canAnalyze(FailureEventDTO event) {
-        return event.getExceptionType() != null && !event.getExceptionType().isEmpty();
-    }
-
-    /**
-     * Создает общий результат анализа, основанный на типе исключения.
-     *
-     * @param event DTO события сбоя.
-     * @return {@link AnalysisResult} с общей информацией об исключении.
-     */
-    @Override
-    public AnalysisResult analyze(FailureEventDTO event) {
-        AnalysisResult ar = new AnalysisResult();
-        ar.setAnalysisType("Анализ по типу исключения (общее)");
-        String exceptionType = event.getExceptionType();
-        ar.setAiConfidence(0.50); // Низкая уверенность, так как анализ неглубокий
-        ar.setSuggestedReason("Произошло необработанное исключение: " + exceptionType);
-        ar.setSolution("Это исключение не относится к наиболее частым. Проанализируйте полный стек-трейс для определения точной причины. Проверьте логи приложения на сервере на момент выполнения теста.");
-        ar.setRawData("Exception Type: " + exceptionType + "\nStack Trace:\n" + event.getStackTrace());
-        return ar;
+    public Optional<AnalysisResult> analyze(FailureEventDTO event) {
+        String exceptionType = event.exceptionType();
+        if (StringUtils.hasText(exceptionType)) {
+            AnalysisResult ar = new AnalysisResult();
+            ar.setAnalysisType("Анализ по типу исключения (общее)");
+            ar.setAiConfidence(0.50); // Низкая уверенность, так как анализ неглубокий
+            ar.setSuggestedReason("Произошло необработанное исключение: " + exceptionType);
+            ar.setSolution("Это исключение не относится к наиболее частым. Проанализируйте полный стек-трейс для определения точной причины. Проверьте логи приложения на сервере на момент выполнения теста.");
+            ar.setExplanationData(Map.of("evidence", "Exception Type: " + exceptionType));
+            return Optional.of(ar);
+        }
+        return Optional.empty();
     }
 }

@@ -11,7 +11,6 @@ import java.util.Optional;
  */
 @Repository
 public interface TestConfigurationRepository extends JpaRepository<TestConfiguration, Long> {
-
     /**
      * Находит конфигурацию по ее уникальному имени.
      *

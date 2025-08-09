@@ -1,22 +1,24 @@
 package com.svedentsov.xaiobserverapp.dto;
 
-import com.svedentsov.xaiobserverapp.model.TestConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 /**
- * DTO, представляющий конфигурацию тестового запуска (версия, окружение, набор тестов).
+ * DTO для представления конфигурации тестового запуска.
+ *
+ * @param appVersion  Версия приложения.
+ * @param environment Окружение.
+ * @param testSuite   Тестовый набор.
  */
-@Data
 @Schema(description = "Конфигурация тестового запуска")
-public class TestConfigurationDTO {
+public record TestConfigurationDTO(
 
-    @Schema(description = "Версия приложения", example = "2.1.0-release")
-    private String appVersion;
+        @Schema(description = "Версия приложения", example = "2.1.0-release")
+        String appVersion,
 
-    @Schema(description = "Окружение", example = "QA-STAND")
-    private String environment;
+        @Schema(description = "Окружение", example = "QA-STAND")
+        String environment,
 
-    @Schema(description = "Тестовый набор", example = "Regression")
-    private String testSuite;
+        @Schema(description = "Тестовый набор", example = "Regression")
+        String testSuite
+) {
 }

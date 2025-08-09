@@ -1,25 +1,23 @@
 package com.svedentsov.xaiobserverapp.model;
 
-import com.svedentsov.xaiobserverapp.dto.EnvironmentDetailsDTO;
-import com.svedentsov.xaiobserverapp.dto.TestArtifactsDTO;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * Основная сущность, представляющая один конкретный запуск теста.
- * Хранит всю информацию о тесте: его имя, статус, время выполнения,
- * детали окружения, артефакты, ошибки, а также результаты анализа.
- * Является центральной сущностью в доменной модели приложения.
+ * Основная JPA-сущность, представляющая один завершенный тестовый запуск.
+ * Хранит всю информацию о тесте, его результате, контексте и результатах анализа.
  */
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"analysisResults", "configuration", "executionPath", "testTags", "customMetadata"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestRun {
@@ -28,75 +26,72 @@ public class TestRun {
      * Перечисление возможных статусов завершения теста.
      */
     public enum TestStatus {
+        PASSED, FAILED, SKIPPED, BROKEN;
+
         /**
-         * Тест успешно пройден.
+         * Безопасно преобразует строку в один из статусов.
+         * Если строка пустая или не соответствует ни одному статусу, возвращается BROKEN.
+         *
+         * @param text строковое представление статуса.
+         * @return объект TestStatus.
          */
-        PASSED,
-        /**
-         * Тест провален из-за ошибки в логике приложения или несоответствия утверждениям.
-         */
-        FAILED,
-        /**
-         * Выполнение теста было пропущено (например, из-за условия).
-         */
-        SKIPPED,
-        /**
-         * Тест сломан из-за ошибки в самом тестовом коде, инфраструктуре или окружении.
-         */
-        BROKEN
+        public static TestStatus fromString(String text) {
+            if (!StringUtils.hasText(text)) {
+                return BROKEN;
+            }
+            try {
+                return TestStatus.valueOf(text.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return BROKEN;
+            }
+        }
     }
 
     /**
-     * Уникальный идентификатор тестового запуска (обычно UUID).
+     * Уникальный идентификатор тестового запуска (UUID, предоставляется клиентом).
      */
     @Id
     private String id;
 
     /**
-     * Полное имя класса, содержащего тестовый метод.
+     * Полное имя класса, содержащего тест.
      */
     private String testClass;
-
     /**
-     * Имя выполненного тестового метода.
+     * Имя тестового метода.
      */
     private String testMethod;
-
     /**
-     * Точное время начала выполнения теста.
+     * Время начала теста.
      */
     private LocalDateTime startTime;
-
     /**
-     * Точное время окончания выполнения теста.
+     * Время окончания теста.
      */
     private LocalDateTime endTime;
-
     /**
-     * Общая длительность выполнения теста в миллисекундах.
+     * Длительность теста в миллисекундах.
      */
     private long durationMillis;
-
     /**
-     * Временная метка завершения теста. Используется для сортировки и фильтрации.
-     * Обычно совпадает с {@code endTime}.
+     * Временная метка завершения, используется для сортировки и фильтрации.
      */
     private LocalDateTime timestamp;
 
     /**
-     * Финальный статус выполнения теста.
+     * Финальный статус теста.
      */
     @Enumerated(EnumType.STRING)
     private TestStatus status;
 
     /**
-     * Тип исключения (exception), если тест завершился сбоем.
+     * Тип исключения (если тест упал).
      */
     @Column(length = 255)
     private String exceptionType;
 
     /**
-     * Сообщение, связанное с исключением.
+     * Сообщение исключения.
      */
     @Column(length = 2000)
     private String exceptionMessage;
@@ -108,29 +103,13 @@ public class TestRun {
     private String stackTrace;
 
     /**
-     * Встраиваемый объект с деталями о шаге, на котором произошел сбой.
-     * Заполняется, если тестовый фреймворк передает эту информацию.
+     * Встроенные метаданные о шаге, на котором произошел сбой.
      */
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "action", column = @Column(name = "failed_step_action")),
-            @AttributeOverride(name = "locatorStrategy", column = @Column(name = "failed_step_locator_strategy")),
-            @AttributeOverride(name = "locatorValue", column = @Column(name = "failed_step_locator_value", length = 512)),
-            @AttributeOverride(name = "confidenceScore", column = @Column(name = "failed_step_confidence_score")),
-            @AttributeOverride(name = "result", column = @Column(name = "failed_step_result")),
-            @AttributeOverride(name = "stepNumber", column = @Column(name = "failed_step_number")),
-            @AttributeOverride(name = "interactedText", column = @Column(name = "failed_step_interacted_text")),
-            @AttributeOverride(name = "errorMessage", column = @Column(name = "failed_step_error_message", length = 1000)),
-            @AttributeOverride(name = "stepStartTime", column = @Column(name = "failed_step_start_time")),
-            @AttributeOverride(name = "stepEndTime", column = @Column(name = "failed_step_end_time")),
-            @AttributeOverride(name = "stepDurationMillis", column = @Column(name = "failed_step_duration_millis")),
-            @AttributeOverride(name = "additionalStepData", column = @Column(name = "failed_step_additional_data", length = 1000))
-    })
     private AiDecisionMetadata failedStep;
 
     /**
-     * Полный путь выполнения теста, представленный в виде упорядоченного списка шагов.
-     * Используется для визуализации и детального анализа.
+     * Полный путь выполнения теста (список шагов), хранится в отдельной таблице.
      */
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "execution_path", joinColumns = @JoinColumn(name = "test_run_id"))
@@ -138,22 +117,19 @@ public class TestRun {
     private List<AiDecisionMetadata> executionPath = new ArrayList<>();
 
     /**
-     * Версия тестируемого приложения.
+     * Встроенные детали окружения, в котором выполнялся тест.
      */
-    private String appVersion;
+    @Embedded
+    private EmbeddableEnvironmentDetails environmentDetails;
 
     /**
-     * Название среды (окружения), в которой выполнялся тест (например, "QA", "STAGING").
+     * Встроенные ссылки на артефакты теста.
      */
-    private String environment;
+    @Embedded
+    private EmbeddableTestArtifacts artifacts;
 
     /**
-     * Название тестового набора (suite), к которому относится тест.
-     */
-    private String testSuite;
-
-    /**
-     * Список тегов, присвоенных тесту (например, "smoke", "regression", "P0").
+     * Список тегов, присвоенных тесту, хранится в отдельной таблице.
      */
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "test_run_tags", joinColumns = @JoinColumn(name = "test_run_id"))
@@ -161,20 +137,7 @@ public class TestRun {
     private List<String> testTags = new ArrayList<>();
 
     /**
-     * Встраиваемый объект с деталями окружения (ОС, браузер, разрешение экрана и т.д.).
-     */
-    @Embedded
-    private EnvironmentDetailsDTO environmentDetails;
-
-    /**
-     * Встраиваемый объект со ссылками на артефакты теста (скриншоты, видео, логи).
-     */
-    @Embedded
-    private TestArtifactsDTO artifacts;
-
-    /**
-     * Произвольные метаданные, связанные с запуском, в формате "ключ-значение"
-     * (например, ID задачи в Jira, номер сборки в CI).
+     * Произвольные метаданные (ключ-значение), хранятся в отдельной таблице.
      */
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "test_run_custom_metadata", joinColumns = @JoinColumn(name = "test_run_id"))
@@ -183,25 +146,23 @@ public class TestRun {
     private Map<String, String> customMetadata;
 
     /**
-     * Список результатов AI-анализа, связанных с этим запуском.
-     * Связь "один-ко-многим" с сущностью {@link AnalysisResult}.
+     * Список результатов анализа, связанных с этим запуском.
      */
     @OneToMany(mappedBy = "testRun", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AnalysisResult> analysisResults = new ArrayList<>();
 
     /**
-     * Конфигурация, в которой выполнялся данный тест.
-     * Связь "многие-к-одному" с сущностью {@link TestConfiguration}.
+     * Конфигурация, в которой выполнялся тест.
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "configuration_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "configuration_id", nullable = false)
     private TestConfiguration configuration;
 
     /**
-     * Вспомогательный метод для добавления результата анализа к текущему тестовому запуску.
-     * Устанавливает двунаправленную связь между {@code TestRun} и {@code AnalysisResult}.
+     * Вспомогательный метод для добавления результата анализа к тестовому запуску,
+     * обеспечивая двустороннюю связь.
      *
-     * @param result Результат анализа для добавления.
+     * @param result результат анализа для добавления.
      */
     public void addAnalysisResult(AnalysisResult result) {
         if (analysisResults == null) {
@@ -209,5 +170,18 @@ public class TestRun {
         }
         analysisResults.add(result);
         result.setTestRun(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TestRun testRun = (TestRun) o;
+        return id != null && Objects.equals(id, testRun.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

@@ -1,18 +1,21 @@
 package com.svedentsov.xaiobserverapp.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.util.Objects;
 
 /**
  * Сущность, представляющая уникальную конфигурацию тестового запуска.
- * <p>
  * Конфигурация является комбинацией версии приложения, окружения и тестового набора.
  * Она используется для группировки схожих тестовых запусков и их последующего анализа.
  */
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
+@AllArgsConstructor
 public class TestConfiguration {
 
     /**
@@ -45,4 +48,17 @@ public class TestConfiguration {
      */
     @Column(unique = true, length = 512)
     private String uniqueName;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TestConfiguration that = (TestConfiguration) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

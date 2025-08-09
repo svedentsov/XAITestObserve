@@ -1,87 +1,100 @@
 package com.svedentsov.xaiobserverapp.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.svedentsov.xaiobserverapp.service.FeedbackService;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * Сущность, представляющая результат AI-анализа для одного тестового запуска.
- * <p>
- * Содержит сгенерированную гипотезу о причине сбоя, предлагаемое решение,
- * уровень уверенности AI и другие связанные данные.
+ * Сущность, представляющая результат анализа причин сбоя (RCA) для одного тестового запуска.
+ * Один тестовый запуск может иметь несколько результатов анализа от разных стратегий.
  */
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"testRun", "feedback"})
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "analysis_result")
 public class AnalysisResult {
 
     /**
-     * Уникальный идентификатор результата анализа (генерируется как UUID).
+     * Уникальный идентификатор результата анализа (UUID).
      */
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     /**
-     * Тестовый запуск, к которому относится данный анализ.
-     * Устанавливает связь "многие-к-одному" с сущностью {@link TestRun}.
+     * Тестовый запуск, к которому относится этот анализ.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_run_id", nullable = false)
     private TestRun testRun;
 
     /**
-     * Тип проведенного анализа (например, "Анализ по типу исключения", "Анализ шага сбоя").
+     * Тип анализатора, сгенерировавшего этот результат (например, "Анализ по типу исключения").
      */
     private String analysisType;
 
     /**
-     * Предполагаемая причина сбоя, сгенерированная AI.
+     * Предполагаемая причина сбоя, предложенная анализатором.
      */
     @Column(length = 2000)
     private String suggestedReason;
 
     /**
-     * Предлагаемое решение проблемы, сгенерированное AI.
+     * Предлагаемое решение проблемы.
      */
     @Column(length = 4000)
     private String solution;
 
     /**
-     * Уровень уверенности AI в данном анализе (от 0.0 до 1.0).
+     * Уверенность AI в данном анализе (от 0.0 до 1.0).
      */
     private Double aiConfidence;
 
     /**
-     * Временная метка, когда был выполнен анализ.
+     * Временная метка проведения анализа.
      */
     private LocalDateTime analysisTimestamp;
 
     /**
-     * "Сырые" данные, на основе которых был сделан вывод (например, тип исключения, стек-трейс).
+     * Структурированные данные, объясняющие предсказание (например, от LIME/SHAP), хранятся в формате JSON.
      */
-    @Column(length = 4000)
-    private String rawData;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column
+    private Map<String, Object> explanationData;
 
     /**
-     * Флаг, подтвержденный пользователем. {@code true}, если пользователь согласился с анализом.
-     * Обновляется через {@link FeedbackService}.
+     * Флаг, указывающий, подтвердил ли пользователь корректность этого анализа.
+     * Обновляется через сервис обратной связи {@link com.svedentsov.xaiobserverapp.service.FeedbackService}.
      */
     private Boolean userConfirmedCorrect;
 
     /**
-     * Список отзывов, оставленных пользователями для этого результата анализа.
-     * Устанавливает связь "один-ко-многим" с сущностью {@link AnalysisFeedback}.
+     * Список отзывов от пользователей по данному результату анализа.
      */
     @OneToMany(mappedBy = "analysisResult", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore // Игнорируем при сериализации, чтобы избежать циклических зависимостей
+    @JsonIgnore
     private List<AnalysisFeedback> feedback;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AnalysisResult that = (AnalysisResult) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

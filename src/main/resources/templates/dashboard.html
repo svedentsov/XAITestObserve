@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>XAI Test Observer</title>
+    <!-- CSRF токены для безопасных запросов -->
+    <meta name="_csrf" th:content="${_csrf.token}" sec:authorize="isAuthenticated()"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" sec:authorize="isAuthenticated()"/>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
           integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
           crossorigin="anonymous" referrerpolicy="no-referrer"/>
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <header class="app-header">
@@ -25,10 +26,17 @@
                 <i class="fa-solid fa-book" aria-hidden="true"></i>
                 <span>API Документация</span>
             </a>
-            <button id="deleteAllDataBtn" class="btn btn-danger">Удалить все данные</button>
+            <button id="deleteAllDataBtn" class="btn btn-danger" sec:authorize="hasRole('ADMIN')">
+                <i class="fa-solid fa-trash-alt" aria-hidden="true"></i> Удалить все данные
+            </button>
             <button id="createDemoBtn" class="btn btn-primary" aria-label="Создать новый демо-запуск теста">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i> Создать демо
             </button>
+            <form th:action="@{/logout}" method="post" sec:authorize="isAuthenticated()">
+                <button class="btn btn-secondary" type="submit">
+                    <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i> Выйти
+                </button>
+            </form>
         </div>
     </div>
 </header>
@@ -39,18 +47,13 @@
             <div class="tabs">
                 <div class="tab-buttons" role="tablist">
                     <button class="tab-button active" data-tab="overview" role="tab" aria-selected="true"
-                            id="tab-overview">Сводка
+                            id="tab-overview">Список Запусков
                     </button>
                     <button class="tab-button" data-tab="widgets" role="tab" aria-selected="false" id="tab-widgets">
-                        Виджеты
+                        Статистика
                     </button>
                 </div>
                 <div id="overviewTabContent" class="tab-content active" role="tabpanel" aria-labelledby="tab-overview">
-                    <div th:if="${message}" class="initial-alert-message success" style="display:none;"
-                         th:text="${message}" role="status"></div>
-                    <div th:if="${error}" class="initial-alert-message error" style="display:none;" th:text="${error}"
-                         role="alert"></div>
-
                     <div class="test-list-wrapper">
                         <table class="test-list-table">
                             <thead>
@@ -62,56 +65,22 @@
                                 <th scope="col">Время запуска</th>
                             </tr>
                             </thead>
-                            <tbody id="testListTableBody" th:fragment="testListBody">
-                            <tr th:each="run : ${testRuns}" class="test-row" th:data-id="${run.id}" tabindex="0"
-                                aria-label="Просмотреть детали запуска теста: [[${run.testMethod}]] со статусом [[${run.status.name()}]]">
-                                <td> <span th:switch="${run.status.name()}" class="status-indicator">
-                                        <i th:case="'PASSED'" class="fa-solid fa-circle-check status-icon success-icon"
-                                           title="Успех" aria-label="Тест успешно пройден"></i>
-                                        <i th:case="'FAILED'" class="fa-solid fa-circle-xmark status-icon failure-icon"
-                                           title="Провал" aria-label="Тест провален"></i>
-                                        <i th:case="'SKIPPED'" class="fa-solid fa-circle-minus status-icon skipped-icon"
-                                           title="Пропущен" aria-label="Тест пропущен"></i>
-                                        <i th:case="'BROKEN'"
-                                           class="fa-solid fa-circle-exclamation status-icon skipped-icon"
-                                           title="Сломан" aria-label="Тест сломан"></i>
-                                    </span>
-                                </td>
-                                <td class="test-method-cell" th:text="${run.testMethod}"></td>
-                                <td>
-                                    <span class="badge badge-env"
-                                          th:text="${run.configuration?.environment ?: 'N/A'}"></span>
-                                </td>
-                                <td th:text="${run.configuration?.appVersion ?: 'N/A'}"></td>
-                                <td class="test-run-time-cell" th:data-timestamp="${run.timestamp}"></td>
-                            </tr>
-                            </tbody>
+                            <!-- Список будет заполнен через JS -->
+                            <tbody id="testListTableBody"></tbody>
                         </table>
+                        <div id="list-spinner" class="loading-message" style="display: none;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Загрузка...
+                        </div>
                     </div>
                 </div>
                 <div id="widgetsTabContent" class="tab-content" role="tabpanel" aria-labelledby="tab-widgets">
                     <div id="stats-container" class="stats-section">
-                        <div class="stats-grid">
-                            <div class="stats-card"><h4>Прогоны</h4>
-                                <p id="stats-total-runs">0</p></div>
-                            <div class="stats-card"><h4>Pass Rate</h4>
-                                <p id="stats-pass-rate">0.0%</p></div>
-                            <div class="stats-card status-passed"><h4>Прошли</h4>
-                                <p id="stats-passed-runs">0</p></div>
-                            <div class="stats-card status-failed"><h4>Упали</h4>
-                                <p id="stats-failed-runs">0</p></div>
-                        </div>
-                        <div class="failing-tests-card">
-                            <h4>Топ нестабильных тестов</h4>
-                            <div class="content" id="top-failing-tests-content">
-                                <p class="no-data-message">Нет данных о сбоях.</p>
-                            </div>
-                        </div>
+                        <!-- Статистика будет заполнена через JS -->
                     </div>
 
                     <div id="graphs-section" class="graphs-section">
                         <div class="graphs-card">
-                            <h4>Тренды прохождения тестов</h4>
+                            <h4>Тренд Pass Rate (30 дней)</h4>
                             <div class="chart-container">
                                 <canvas id="passRateChart" aria-label="График тренда прохождения тестов"></canvas>
                             </div>
@@ -141,6 +110,22 @@
 
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
+<!-- Шаблон для рендеринга строки теста. Отделяет HTML от JS. -->
+<template id="test-row-template">
+    <tr class="test-row" tabindex="0">
+        <td><span class="status-indicator"><i></i></span></td>
+        <td class="test-method-cell"></td>
+        <td><span class="badge badge-env"></span></td>
+        <td class="test-version-cell"></td>
+        <td class="test-run-time-cell"></td>
+    </tr>
+</template>
+
+<!-- WebSocket и Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- Основной скрипт дашборда -->
 <script th:src="@{/js/dashboard.js}"></script>
 </body>
 </html>

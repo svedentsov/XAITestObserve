@@ -11,7 +11,6 @@ import java.util.Optional;
  */
 @Repository
 public interface AnalysisResultRepository extends JpaRepository<AnalysisResult, String> {
-
     /**
      * Находит результат анализа по его ID.
      *

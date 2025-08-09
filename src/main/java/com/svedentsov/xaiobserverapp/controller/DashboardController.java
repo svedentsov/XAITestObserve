@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Контроллер для отображения веб-страниц с использованием Thymeleaf.
- * <p>
- * Отвечает за рендеринг главной страницы дашборда и отдельных фрагментов.
+ * Контроллер для обработки UI-запросов и отображения HTML-страниц с помощью Thymeleaf.
  */
 @Slf4j
 @Controller
@@ -24,25 +22,26 @@ public class DashboardController {
     private final TestRunService testRunService;
 
     /**
-     * Отображает главную страницу дашборда со списком всех тестовых запусков.
+     * Отображает главную страницу дашборда.
+     * Возвращает "каркас" страницы, который затем наполняется данными через API-запросы из JavaScript.
      *
-     * @param model Модель для передачи данных в шаблон Thymeleaf.
-     * @return Имя шаблона "dashboard".
+     * @return имя Thymeleaf-шаблона "dashboard".
      */
     @GetMapping("/")
-    public String getDashboard(Model model) {
-        log.debug("Request to display the main dashboard.");
-        model.addAttribute("testRuns", testRunService.getAllTestRunsOrderedByTimestampDesc());
+    public String getDashboard() {
+        log.debug("Request to display the main dashboard skeleton.");
         return "dashboard";
     }
 
     /**
-     * Отображает страницу с детальной информацией о конкретном тесте.
-     * (Примечание: в текущей реализации не используется, вся логика на одной странице).
+     * Отображает страницу с детальной информацией о конкретном тестовом запуске.
+     * Этот эндпоинт может использоваться для прямых ссылок на детали теста,
+     * хотя в основной логике дашборда детали подгружаются через API.
      *
-     * @param id    ID тестового запуска.
-     * @param model Модель для передачи данных.
-     * @return Имя шаблона "test-detail".
+     * @param id    Уникальный идентификатор тестового запуска.
+     * @param model Модель для передачи данных в Thymeleaf-шаблон.
+     * @return имя Thymeleaf-шаблона "test-detail".
+     * @throws ResponseStatusException если тестовый запуск с указанным ID не найден.
      */
     @GetMapping("/test/{id}")
     public String getTestDetail(@PathVariable String id, Model model) {
@@ -54,18 +53,5 @@ public class DashboardController {
                 });
         model.addAttribute("testRun", testRun);
         return "test-detail";
-    }
-
-    /**
-     * Возвращает HTML-фрагмент со списком тестовых запусков для динамического обновления.
-     *
-     * @param model Модель для передачи данных.
-     * @return Ссылку на фрагмент Thymeleaf "dashboard :: testListBody".
-     */
-    @GetMapping("/test-list-fragment")
-    public String getTestRunListFragment(Model model) {
-        log.debug("Request for test list fragment.");
-        model.addAttribute("testRuns", testRunService.getAllTestRunsOrderedByTimestampDesc());
-        return "dashboard :: testListBody";
     }
 }

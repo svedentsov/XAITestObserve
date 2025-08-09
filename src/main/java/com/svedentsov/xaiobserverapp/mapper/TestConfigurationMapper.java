@@ -9,7 +9,6 @@ import org.mapstruct.Mapper;
  */
 @Mapper(componentModel = "spring")
 public interface TestConfigurationMapper {
-
     /**
      * Преобразует сущность TestConfiguration в DTO.
      *

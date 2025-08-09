@@ -805,7 +805,7 @@ pre.error-pre {
 
 .execution-path-visualizer li {
     position: relative;
-    padding-left: 0; /* --- ИЗМЕНЕНИЕ: Убран отступ --- */
+    padding-left: 0;
     margin-bottom: var(--spacing-lg);
 }
 
@@ -831,7 +831,7 @@ pre.error-pre {
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius-md);
     font-size: 14px;
-    border: none; /* --- ИЗМЕНЕНИЕ: Убран бордер --- */
+    border: none;
 }
 
 .step-details p {

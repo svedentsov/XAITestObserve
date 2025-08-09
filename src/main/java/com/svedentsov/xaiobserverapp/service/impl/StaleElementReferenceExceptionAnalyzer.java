@@ -2,46 +2,37 @@ package com.svedentsov.xaiobserverapp.service.impl;
 
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;
-import com.svedentsov.xaiobserverapp.service.FailureAnalyzer;
+import com.svedentsov.xaiobserverapp.service.AnalysisStrategy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * Анализатор для сбоев, вызванных {@code StaleElementReferenceException}.
- * <p>
- * Это исключение возникает, когда DOM-структура страницы изменяется после того,
- * как элемент был найден, но до того, как с ним произошло взаимодействие,
- * делая ссылку на элемент недействительной.
+ * Стратегия анализа, специализирующаяся на {@code org.openqa.selenium.StaleElementReferenceException}.
+ * Этот анализатор обрабатывает случаи, когда ссылка на ранее найденный элемент DOM стала недействительной,
+ * как правило, из-за динамического обновления страницы (AJAX).
  */
 @Component
-@Order(10)
-public class StaleElementReferenceExceptionAnalyzer implements FailureAnalyzer {
+@Order(10) // Высокий приоритет для этого типа исключения
+public class StaleElementReferenceExceptionAnalyzer implements AnalysisStrategy {
 
-    /**
-     * Проверяет, является ли тип исключения {@code StaleElementReferenceException}.
-     *
-     * @param event DTO события сбоя.
-     * @return {@code true}, если тип исключения содержит "StaleElementReferenceException", иначе {@code false}.
-     */
-    @Override
-    public boolean canAnalyze(FailureEventDTO event) {
-        return event.getExceptionType() != null && event.getExceptionType().contains("StaleElementReferenceException");
-    }
+    private static final String EXCEPTION_NAME = "StaleElementReferenceException";
 
-    /**
-     * Предоставляет анализ и стандартное решение для {@code StaleElementReferenceException}.
-     *
-     * @param event DTO события сбоя.
-     * @return {@link AnalysisResult} с рекомендациями по исправлению данной ошибки.
-     */
     @Override
-    public AnalysisResult analyze(FailureEventDTO event) {
-        AnalysisResult ar = new AnalysisResult();
-        ar.setAnalysisType("Анализ по типу исключения");
-        ar.setAiConfidence(0.95); // Высокая уверенность, так как причина обычно однозначна
-        ar.setSuggestedReason("Элемент, с которым пытались взаимодействовать, устарел. Это происходит, когда DOM-структура страницы динамически изменяется (например, через AJAX), и ссылка на элемент становится недействительной.");
-        ar.setSolution("Не сохраняйте WebElement в переменную для долгого использования. Вместо этого, находите элемент заново непосредственно перед каждым взаимодействием. Используйте паттерн Page Object Model для инкапсуляции логики поиска элементов.");
-        ar.setRawData("Exception Type: " + event.getExceptionType() + "\nStack Trace:\n" + event.getStackTrace());
-        return ar;
+    public Optional<AnalysisResult> analyze(FailureEventDTO event) {
+        String exceptionType = event.exceptionType();
+        if (StringUtils.hasText(exceptionType) && exceptionType.contains(EXCEPTION_NAME)) {
+            AnalysisResult ar = new AnalysisResult();
+            ar.setAnalysisType("Анализ по типу исключения (StaleElementReferenceException)");
+            ar.setAiConfidence(0.95);
+            ar.setSuggestedReason("Элемент, с которым пытались взаимодействовать, устарел. Это происходит, когда DOM-структура страницы динамически изменяется (например, через AJAX), и ссылка на элемент становится недействительной.");
+            ar.setSolution("Не сохраняйте WebElement в переменную для долгого использования. Вместо этого, находите элемент заново непосредственно перед каждым взаимодействием. Используйте паттерн Page Object Model для инкапсуляции логики поиска элементов.");
+            ar.setExplanationData(Map.of("evidence", "Exception Type: " + event.exceptionType()));
+            return Optional.of(ar);
+        }
+        return Optional.empty();
     }
 }

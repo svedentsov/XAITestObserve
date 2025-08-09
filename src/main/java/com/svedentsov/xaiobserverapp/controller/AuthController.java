@@ -3,16 +3,18 @@ package com.svedentsov.xaiobserverapp.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
+/**
+ * Контроллер для обработки запросов, связанных с аутентификацией.
+ */
 @Controller
 public class AuthController {
-
     /**
-     * Отображает кастомную страницу входа.
+     * Отображает страницу входа в систему.
      *
-     * @return Имя шаблона "login".
+     * @return имя Thymeleaf-шаблона "login".
      */
     @GetMapping("/login")
     public String login() {
-        return "login"; // Это имя нашего будущего HTML-файла в /templates
+        return "login";
     }
 }
