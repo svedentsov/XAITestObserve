@@ -14,8 +14,10 @@ import java.util.stream.Collectors;
 
 /**
  * Глобальный обработчик исключений для всего приложения.
- * Перехватывает исключения, возникающие в контроллерах, и формирует
- * стандартизированные ответы об ошибках в формате {@link ApiErrorResponse}.
+ * Этот класс, аннотированный {@link ControllerAdvice}, централизованно перехватывает исключения,
+ * возникающие в контроллерах, и формирует стандартизированные HTTP-ответы об ошибках.
+ * Это позволяет избежать дублирования кода обработки ошибок в каждом контроллере (принцип DRY)
+ * и обеспечивает консистентный формат API-ошибок.
  */
 @Slf4j
 @ControllerAdvice
@@ -23,9 +25,10 @@ public class GlobalExceptionHandler {
 
     /**
      * Обрабатывает исключение {@link ResourceNotFoundException}, которое выбрасывается при отсутствии ресурса.
+     * Возвращает клиенту статус 404 NOT FOUND.
      *
      * @param ex Исключение, которое было выброшено.
-     * @return {@link ResponseEntity} со статусом 404 NOT_FOUND и телом ошибки.
+     * @return {@link ResponseEntity} со статусом 404 и телом ошибки.
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
@@ -35,32 +38,36 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Обрабатывает исключение {@link MethodArgumentNotValidException}, возникающее при ошибках валидации DTO.
+     * Обрабатывает исключение {@link MethodArgumentNotValidException}, возникающее при ошибках валидации DTO
+     * (например, когда поля, аннотированные @NotBlank, пусты).
+     * Возвращает клиенту статус 400 BAD REQUEST с детальным описанием ошибок валидации.
      *
      * @param ex Исключение с информацией об ошибках валидации.
-     * @return {@link ResponseEntity} со статусом 400 BAD_REQUEST и телом, содержащим детали ошибок.
+     * @return {@link ResponseEntity} со статусом 400 и телом, содержащим детали ошибок.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-        log.error("Validation error: {}", errorMessage);
+                .map(error -> String.format("'%s': %s", error.getField(), error.getDefaultMessage()))
+                .collect(Collectors.joining("; "));
+
+        log.warn("Validation error: {}", errorMessage);
         var errorResponse = new ApiErrorResponse(HttpStatus.BAD_REQUEST.value(), "Validation failed: " + errorMessage, LocalDateTime.now());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     /**
-     * Обрабатывает все остальные непредвиденные исключения, не перехваченные другими обработчиками.
-     * Логирует полную ошибку и возвращает общий ответ об ошибке сервера.
+     * Обрабатывает все остальные непредвиденные исключения как "fallback" механизм.
+     * Логирует полную ошибку для последующего анализа и возвращает общий ответ
+     * со статусом 500 INTERNAL_SERVER_ERROR, чтобы не раскрывать внутренние детали системы.
      *
      * @param ex Любое непредвиденное исключение.
-     * @return {@link ResponseEntity} со статусом 500 INTERNAL_SERVER_ERROR.
+     * @return {@link ResponseEntity} со статусом 500.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleAllExceptions(Exception ex) {
-        log.error("An unexpected error occurred: ", ex);
-        var errorResponse = new ApiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An internal server error occurred. Please check logs.", LocalDateTime.now());
+        log.error("An unexpected internal error occurred: ", ex);
+        var errorResponse = new ApiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An internal server error occurred. Please check server logs for details.", LocalDateTime.now());
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

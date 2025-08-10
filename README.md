@@ -20,7 +20,8 @@ XAI Observer App - это веб-приложение на базе Spring Boot,
 #### Backend
 *   **Фреймворк:** Spring Boot 3
 *   **Доступ к данным:** Spring Data JPA / Hibernate
-*   **База данных:** H2 Database (встраиваемая)
+*   **База данных:** PostgreSQL / H2 Database (для разработки)
+*   **Миграции БД:** Liquibase
 *   **Документация API:** Springdoc OpenAPI (Swagger 3)
 *   **Утилиты:** Lombok, MapStruct
 

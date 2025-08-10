@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface TestConfigurationRepository extends JpaRepository<TestConfiguration, Long> {
     /**
      * Находит конфигурацию по ее уникальному имени.
+     * Это основной метод для поиска существующих конфигураций.
      *
      * @param uniqueName Уникальное имя конфигурации.
      * @return Optional, содержащий сущность, если она найдена.

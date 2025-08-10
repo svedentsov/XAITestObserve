@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XAI Test Observer</title>
-    <!-- CSRF токены для безопасных запросов -->
     <meta name="_csrf" th:content="${_csrf.token}" sec:authorize="isAuthenticated()"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}" sec:authorize="isAuthenticated()"/>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
           integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
           crossorigin="anonymous" referrerpolicy="no-referrer"/>
@@ -21,13 +19,17 @@
             <h1 class="header-title-text">Панель анализа тестов</h1>
         </div>
         <div class="header-actions">
+            <button id="theme-toggle" class="theme-toggle-btn" title="Переключить тему" aria-label="Переключить тему">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </button>
             <a th:href="@{/swagger-ui.html}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary"
                aria-label="Открыть документацию API">
                 <i class="fa-solid fa-book" aria-hidden="true"></i>
                 <span>API Документация</span>
             </a>
             <button id="deleteAllDataBtn" class="btn btn-danger" sec:authorize="hasRole('ADMIN')">
-                <i class="fa-solid fa-trash-alt" aria-hidden="true"></i> Удалить все данные
+                <i class="fa-solid fa-trash-alt" aria-hidden="true"></i> Удалить все
             </button>
             <button id="createDemoBtn" class="btn btn-primary" aria-label="Создать новый демо-запуск теста">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i> Создать демо
@@ -40,63 +42,94 @@
         </div>
     </div>
 </header>
-
 <main id="mainContent" class="app-main">
     <div class="container-fluid">
         <section class="left-panel">
             <div class="tabs">
                 <div class="tab-buttons" role="tablist">
                     <button class="tab-button active" data-tab="overview" role="tab" aria-selected="true"
-                            id="tab-overview">Список Запусков
+                            id="tab-overview">Список запусков
                     </button>
                     <button class="tab-button" data-tab="widgets" role="tab" aria-selected="false" id="tab-widgets">
                         Статистика
                     </button>
                 </div>
                 <div id="overviewTabContent" class="tab-content active" role="tabpanel" aria-labelledby="tab-overview">
+                    <div class="filter-controls">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="search" id="search-input" placeholder="Поиск по названию метода..."
+                                   aria-label="Поиск по названию метода">
+                        </div>
+                        <div id="status-filters" class="status-filters" role="group" aria-label="Фильтры по статусу">
+                            <button class="filter-btn active" data-status="ALL">Все</button>
+                            <button class="filter-btn" data-status="PASSED" title="Только успешные"><i
+                                    class="fa-solid fa-circle-check"></i></button>
+                            <button class="filter-btn" data-status="FAILED" title="Только проваленные"><i
+                                    class="fa-solid fa-circle-xmark"></i></button>
+                            <button class="filter-btn" data-status="SKIPPED" title="Только пропущенные"><i
+                                    class="fa-solid fa-circle-minus"></i></button>
+                        </div>
+                    </div>
                     <div class="test-list-wrapper">
                         <table class="test-list-table">
                             <thead>
                             <tr>
-                                <th scope="col" class="status-header"></th>
-                                <th scope="col">Метод Теста</th>
-                                <th scope="col">Окружение</th>
-                                <th scope="col">Версия</th>
-                                <th scope="col">Время запуска</th>
+                                <th scope="col" class="method-col">Метод Теста</th>
+                                <th scope="col" class="env-col">Окружение</th>
+                                <th scope="col" class="version-col">Версия</th>
+                                <th scope="col" class="time-col">Время запуска</th>
                             </tr>
                             </thead>
-                            <!-- Список будет заполнен через JS -->
                             <tbody id="testListTableBody"></tbody>
                         </table>
-                        <div id="list-spinner" class="loading-message" style="display: none;">
-                            <i class="fa-solid fa-spinner fa-spin"></i> Загрузка...
+                        <div id="list-spinner" class="loading-message" style="display: none;"><i
+                                class="fa-solid fa-spinner fa-spin"></i> Загрузка...
                         </div>
+                        <div id="no-results-placeholder" class="placeholder-content" style="display: none;"><i
+                                class="fa-solid fa-magnifying-glass placeholder-icon"></i>
+                            <p>Ничего не найдено. Попробуйте изменить фильтры.</p></div>
                     </div>
                 </div>
                 <div id="widgetsTabContent" class="tab-content" role="tabpanel" aria-labelledby="tab-widgets">
                     <div id="stats-container" class="stats-section">
-                        <!-- Статистика будет заполнена через JS -->
+                        <!-- Основные метрики (карточки) будут здесь -->
                     </div>
-
                     <div id="graphs-section" class="graphs-section">
                         <div class="graphs-card">
                             <h4>Тренд Pass Rate (30 дней)</h4>
                             <div class="chart-container">
-                                <canvas id="passRateChart" aria-label="График тренда прохождения тестов"></canvas>
+                                <canvas id="passRateChart"></canvas>
                             </div>
                         </div>
-
                         <div class="graphs-card">
-                            <h4>Топ 5 самых медленных тестов</h4>
+                            <h4>Топ нестабильных тестов</h4>
                             <div class="chart-container">
-                                <canvas id="slowTestsChart" aria-label="График топ 5 самых медленных тестов"></canvas>
+                                <canvas id="failingTestsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="graphs-card">
+                            <h4>Топ типов ошибок</h4>
+                            <div class="chart-container">
+                                <canvas id="exceptionTypesChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="graphs-card">
+                            <h4>Запуски по окружениям</h4>
+                            <div class="chart-container">
+                                <canvas id="runsByEnvChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="graphs-card">
+                            <h4>Запуски по наборам</h4>
+                            <div class="chart-container">
+                                <canvas id="runsBySuiteChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-
         <aside class="right-panel">
             <div id="rightPanelContent" class="right-panel-content">
                 <div class="placeholder-content">
@@ -107,25 +140,18 @@
         </aside>
     </div>
 </main>
-
 <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
-
-<!-- Шаблон для рендеринга строки теста. Отделяет HTML от JS. -->
 <template id="test-row-template">
     <tr class="test-row" tabindex="0">
-        <td><span class="status-indicator"><i></i></span></td>
-        <td class="test-method-cell"></td>
-        <td><span class="badge badge-env"></span></td>
-        <td class="test-version-cell"></td>
-        <td class="test-run-time-cell"></td>
+        <td class="test-method-cell method-col" data-method-cell></td>
+        <td class="env-col"><span class="badge badge-env"></span></td>
+        <td class="version-col"></td>
+        <td class="time-col"></td>
     </tr>
 </template>
-
-<!-- WebSocket и Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<!-- Основной скрипт дашборда -->
 <script th:src="@{/js/dashboard.js}"></script>
 </body>
 </html>

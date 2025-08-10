@@ -8,6 +8,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 /**
  * Конфигурация для WebSocket с использованием STOMP поверх SockJS.
+ * <p>
  * Включает и настраивает брокер сообщений для обмена данными в реальном времени
  * между сервером и клиентами (например, для уведомления о новых тестовых запусках).
  */

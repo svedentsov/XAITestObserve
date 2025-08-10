@@ -30,7 +30,7 @@ public class TestRun {
 
         /**
          * Безопасно преобразует строку в один из статусов.
-         * Если строка пустая или не соответствует ни одному статусу, возвращается BROKEN.
+         * Используется switch expression для лаконичности и безопасности типов.
          *
          * @param text строковое представление статуса.
          * @return объект TestStatus.
@@ -39,11 +39,12 @@ public class TestRun {
             if (!StringUtils.hasText(text)) {
                 return BROKEN;
             }
-            try {
-                return TestStatus.valueOf(text.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return BROKEN;
-            }
+            return switch (text.toUpperCase().strip()) {
+                case "PASSED" -> PASSED;
+                case "FAILED" -> FAILED;
+                case "SKIPPED" -> SKIPPED;
+                default -> BROKEN; // Все остальные случаи (включая "BROKEN")
+            };
         }
     }
 
@@ -99,7 +100,7 @@ public class TestRun {
     /**
      * Полный стек-трейс ошибки.
      */
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String stackTrace;
 
     /**
@@ -159,10 +160,9 @@ public class TestRun {
     private TestConfiguration configuration;
 
     /**
-     * Вспомогательный метод для добавления результата анализа к тестовому запуску,
-     * обеспечивая двустороннюю связь.
+     * Добавляет результат анализа к текущему тестовому запуску, устанавливая двунаправленную связь.
      *
-     * @param result результат анализа для добавления.
+     * @param result Результат анализа для добавления.
      */
     public void addAnalysisResult(AnalysisResult result) {
         if (analysisResults == null) {
@@ -172,6 +172,10 @@ public class TestRun {
         result.setTestRun(this);
     }
 
+    /**
+     * Реализация equals для JPA-сущностей. Сравнение идет по бизнес-ключу (ID),
+     * что является стандартной практикой для managed-сущностей.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -180,6 +184,11 @@ public class TestRun {
         return id != null && Objects.equals(id, testRun.id);
     }
 
+    /**
+     * Реализация hashCode для JPA-сущностей. Возвращает константное значение
+     * на основе класса, чтобы хэш-код не менялся после присвоения ID базой данных,
+     * что важно при работе с коллекциями (например, HashSet).
+     */
     @Override
     public int hashCode() {
         return getClass().hashCode();

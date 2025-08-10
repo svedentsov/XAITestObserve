@@ -26,7 +26,7 @@ public class MockXaiController {
             description = "Принимает данные о сбое и возвращает фиктивный результат анализа, как это делал бы реальный ML-сервис. Возвращает структурированные данные в поле `explanationData`.")
     @PostMapping("/mock/xai/predict")
     public AnalysisResult mockXaiPrediction(@RequestBody FailureEventDTO event) {
-        AnalysisResult result = new AnalysisResult();
+        var result = new AnalysisResult();
         result.setAnalysisType("ML-based XAI Analysis (Mock)");
         result.setAiConfidence(0.78);
         result.setAnalysisTimestamp(LocalDateTime.now());

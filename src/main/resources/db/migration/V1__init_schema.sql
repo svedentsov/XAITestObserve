@@ -16,10 +16,10 @@ CREATE TABLE test_run (
     end_time TIMESTAMP,
     duration_millis BIGINT NOT NULL,
     timestamp TIMESTAMP,
-    status VARCHAR(255),
+    status VARCHAR(50),
     exception_type VARCHAR(255),
     exception_message VARCHAR(2000),
-    stack_trace VARCHAR(4000),
+    stack_trace TEXT,
     -- Поля из AiDecisionMetadata (failedStep)
     step_number INT,
     action VARCHAR(255),
@@ -27,8 +27,8 @@ CREATE TABLE test_run (
     locator_value VARCHAR(512),
     interacted_text VARCHAR(255),
     confidence_score DOUBLE PRECISION,
-    result VARCHAR(255),
-    error_message VARCHAR(255),
+    result VARCHAR(50),
+    error_message VARCHAR(2000),
     step_start_time BIGINT,
     step_end_time BIGINT,
     step_duration_millis BIGINT,
@@ -58,7 +58,7 @@ CREATE TABLE analysis_result (
     id VARCHAR(255) PRIMARY KEY,
     analysis_type VARCHAR(255),
     suggested_reason VARCHAR(2000),
-    solution VARCHAR(4000),
+    solution TEXT,
     ai_confidence DOUBLE PRECISION,
     analysis_timestamp TIMESTAMP,
     -- Используем нативный JSON тип H2, для PostgreSQL лучше JSONB
@@ -91,8 +91,8 @@ CREATE TABLE execution_path (
     locator_value VARCHAR(512),
     interacted_text VARCHAR(255),
     confidence_score DOUBLE PRECISION NOT NULL,
-    result VARCHAR(255),
-    error_message VARCHAR(255),
+    result VARCHAR(50),
+    error_message VARCHAR(2000),
     step_start_time BIGINT,
     step_end_time BIGINT,
     step_duration_millis BIGINT,
@@ -100,6 +100,11 @@ CREATE TABLE execution_path (
     PRIMARY KEY (test_run_id, step_index),
     CONSTRAINT fk_path_testrun FOREIGN KEY (test_run_id) REFERENCES test_run(id) ON DELETE CASCADE
 );
+
+-- Добавлены индексы для ускорения поиска по часто используемым полям
+CREATE INDEX idx_testrun_status ON test_run(status);
+CREATE INDEX idx_testrun_timestamp ON test_run(timestamp);
+CREATE INDEX idx_testrun_test_name ON test_run(test_class, test_method);
 
 CREATE TABLE test_run_tags (
     test_run_id VARCHAR(255) NOT NULL,

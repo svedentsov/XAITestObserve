@@ -6,6 +6,7 @@ import com.svedentsov.xaiobserverapp.model.TestRun;
 import com.svedentsov.xaiobserverapp.repository.TestRunRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,8 +25,8 @@ import java.util.Optional;
 public class TestRunService {
 
     private final TestRunRepository testRunRepository;
-    private final CacheManager cacheManager;
     private final TestRunMapper testRunMapper;
+    private final CacheManager cacheManager;
 
     /**
      * Получает страницу с тестовыми запусками.
@@ -35,6 +36,7 @@ public class TestRunService {
      */
     @Transactional(readOnly = true)
     public Page<TestRunDetailDTO> getAllTestRunsPaginated(Pageable pageable) {
+        log.debug("Fetching paginated test runs: {}", pageable);
         return testRunRepository.findAll(pageable).map(testRunMapper::toDetailDto);
     }
 
@@ -46,20 +48,21 @@ public class TestRunService {
      */
     @Transactional(readOnly = true)
     public Optional<TestRun> getTestRunById(String id) {
+        log.debug("Fetching test run by ID: {}", id);
         return testRunRepository.findById(id);
     }
 
     /**
      * Удаляет все тестовые запуски из базы данных.
+     * Этот метод использует `deleteAllInBatch` для максимальной производительности.
      * Также очищает связанный кэш статистики.
      */
     @Transactional
     public void deleteAllTestRuns() {
-        testRunRepository.deleteAll();
-        log.info("All TestRun entities have been deleted.");
-        Optional.ofNullable(cacheManager.getCache("statistics")).ifPresent(cache -> {
-            cache.clear();
-            log.info("Statistics cache has been cleared.");
-        });
+        testRunRepository.deleteAllInBatch();
+        log.warn("All TestRun entities have been deleted in a batch operation.");
+
+        Optional.ofNullable(cacheManager.getCache("statistics")).ifPresent(Cache::clear);
+        log.info("Statistics cache has been cleared following data deletion.");
     }
 }

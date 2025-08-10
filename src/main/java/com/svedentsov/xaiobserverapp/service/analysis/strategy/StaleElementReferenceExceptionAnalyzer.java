@@ -1,4 +1,4 @@
-package com.svedentsov.xaiobserverapp.service.impl;
+package com.svedentsov.xaiobserverapp.service.analysis.strategy;
 
 import com.svedentsov.xaiobserverapp.dto.FailureEventDTO;
 import com.svedentsov.xaiobserverapp.model.AnalysisResult;

@@ -14,10 +14,17 @@ import java.util.Map;
 
 /**
  * Сервис анализа первопричин (Root Cause Analysis - RCA).
- * Оркестрирует процесс анализа сбоев тестов. Последовательно применяет
- * различные стратегии анализа ({@link AnalysisStrategy}). Если ни одна из
- * rule-based стратегий не сработала, обращается к внешнему XAI-сервису
- * для получения предиктивного анализа.
+ * Оркестрирует процесс анализа сбоев тестов.
+ * <p>
+ * Принцип работы:
+ * 1. Получает на вход событие о завершении теста {@link FailureEventDTO}.
+ * 2. Если тест успешен, возвращает стандартное резюме.
+ * 3. Если тест провален, последовательно применяет цепочку "rule-based" стратегий анализа
+ * ({@link AnalysisStrategy}), отсортированных по приоритету (аннотация @Order).
+ * Используется первая стратегия, которая сможет обработать сбой.
+ * 4. Если ни одна из "rule-based" стратегий не сработала, сервис обращается
+ * к внешнему XAI-сервису (например, ML-модели) для получения предиктивного анализа.
+ * 5. Если и XAI-сервис не дал ответа, формируется общее (fallback) сообщение об ошибке.
  */
 @Slf4j
 @Service
@@ -31,8 +38,7 @@ public class RcaService {
      * Выполняет полный анализ события о завершении теста.
      *
      * @param event DTO с данными о тестовом запуске.
-     * @return Список результатов анализа. Обычно содержит один результат,
-     * но может быть расширен для возврата нескольких гипотез.
+     * @return Список результатов анализа.
      */
     public List<AnalysisResult> analyzeTestRun(FailureEventDTO event) {
         List<AnalysisResult> results = new ArrayList<>();
@@ -42,19 +48,17 @@ public class RcaService {
             return results;
         }
 
-        // Пытаемся применить rule-based стратегии
-        for (AnalysisStrategy strategy : analysisStrategies) {
+        for (var strategy : analysisStrategies) {
             var resultOpt = strategy.analyze(event);
             if (resultOpt.isPresent()) {
                 log.info("Analysis found by rule-based strategy: {}", strategy.getClass().getSimpleName());
-                AnalysisResult result = resultOpt.get();
+                var result = resultOpt.get();
                 result.setAnalysisTimestamp(LocalDateTime.now());
                 results.add(result);
-                return results; // Возвращаем первый сработавший результат
+                return results;
             }
         }
 
-        // Если ни одна rule-based стратегия не сработала, обращаемся к внешнему XAI сервису
         log.info("No specific rule-based strategy found. Calling XAI service as a fallback...");
         xaiServiceClient.getPrediction(event).ifPresentOrElse(
                 mlResult -> {
@@ -63,7 +67,6 @@ public class RcaService {
                     results.add(mlResult);
                 },
                 () -> {
-                    // Если и XAI сервис ничего не вернул, создаем общее резюме
                     log.warn("XAI service did not provide a prediction. Falling back to generic analysis.");
                     results.add(createGeneralFailureSummary(event));
                 }
@@ -77,7 +80,7 @@ public class RcaService {
      * @return {@link AnalysisResult} для успешного запуска.
      */
     private AnalysisResult createSuccessfulRunSummary() {
-        AnalysisResult ar = new AnalysisResult();
+        var ar = new AnalysisResult();
         ar.setAnalysisType("Резюме успешного запуска");
         ar.setAiConfidence(1.0);
         ar.setSuggestedReason("Тест успешно завершен. Все шаги выполнены корректно.");
@@ -94,11 +97,11 @@ public class RcaService {
      * @return {@link AnalysisResult} с общей информацией.
      */
     private AnalysisResult createGeneralFailureSummary(FailureEventDTO event) {
-        AnalysisResult ar = new AnalysisResult();
+        var ar = new AnalysisResult();
         ar.setAnalysisType("Общий анализ сбоя");
         ar.setAiConfidence(0.40);
         ar.setSuggestedReason("Тест завершился со статусом FAILED, но не удалось определить конкретную причину на основе правил или ответа ML-сервиса.");
-        ar.setSolution("Проверьте логи выполнения теста, скриншоты (если они есть) и состояние окружения. Возможно, проблема связана с инфраструктурой или внешними сервисами.");
+        ar.setSolution("Проверьте логи выполнения теста, скриншоты (если они есть) и состояние окружения.");
         ar.setAnalysisTimestamp(LocalDateTime.now());
         ar.setExplanationData(Map.of("status", event.status(), "fallback_reason", "No specific analyzer triggered"));
         return ar;
